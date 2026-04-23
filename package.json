@@ -1,0 +1,12 @@
+{
+  "name": "tribitwebctl",
+  "version": "1.0.0",
+  "description": "Tribit Web Control",
+  "main": "js/main.js",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0"
+  }
+}

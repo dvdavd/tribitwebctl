@@ -1,0 +1,24 @@
+{
+  "name": "Tribit Web Control",
+  "short_name": "Tribit",
+  "description": "Web Bluetooth control panel for supported Tribit speakers.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#393a3f",
+  "theme_color": "#393a3f",
+  "icons": [
+    {
+      "src": "assets/appicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/appicon-full.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

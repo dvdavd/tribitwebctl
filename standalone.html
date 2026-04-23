@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <meta name="theme-color" content="#393a3f">
+    <title>Tribit Web Control</title>
+    
+    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+CiAgICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHJ4PSI1IiBmaWxsPSIjZmZlMjBiIiAvPgogICAgPHBhdGggZmlsbD0iIzM5M2EzZiIgZD0iTTE3LjcxLDcuNzFMMTIsMmgtMXY3LjU5TDYuNDEsNUw1LDYuNDFMMTAuNTksMTJMNSwxNy41OUw2LjQxLDE5TDExLDE0LjQxVjIyaDFsNS43MS01LjcxTDEyLjQxLDEyTDE3LjcxLDcuNzF6IE0xMyw1LjgzbDEuODgsMS44OEwxMyw5LjU5VjUuODN6IE0xMywxOC4xN3YtMy43NmwxLjg4LDEuODhMMTMsMTguMTd6IiAvPgo8L3N2Zz4K" type="image/svg+xml">
+    <style>
+:root {
+    --bg: #393a3f;
+    --panel: #3f4046;
+    --panel-soft: #46474d;
+    --line: rgba(255, 255, 255, 0.12);
+    --text: #f2f2ee;
+    --muted: #c8c8c1;
+    --primary: #ffe20b;
+    --primary-dark: #ffb300;
+    --primary-bright: #fff04a;
+    --button-text-dark: #2f3035;
+    --accent: #ff8e1a;
+    --success: #94f248;
+    --slider-active: #ffe20b;
+    --slider-track: #5d5e65;
+    --surface-tint: rgba(0, 0, 0, 0.2);
+    --mobile-inset: 12px;
+    --eq-curve-glow: rgba(255, 226, 11, 0.08);
+    --eq-curve-line: rgba(255, 226, 11, 0.34);
+    --eq-curve-fill-top: 0.2;
+    --shadow: 0 16px 32px -20px rgba(0, 0, 0, 0.45), 0 10px 24px -18px rgba(0, 0, 0, 0.3);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    margin: 0;
+    padding: 12px;
+    line-height: 1.5;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.page {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.card {
+    background: var(--panel);
+    padding: 1.25rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--line);
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+}
+
+.page-header-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex: 1;
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--text);
+}
+
+.meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.battery-icon {
+    width: 1.6rem;
+    height: 1.6rem;
+    display: block;
+    flex-shrink: 0;
+    filter: brightness(0) invert(0.94);
+}
+
+.battery-value {
+    color: var(--text);
+    font-weight: 400;
+}
+
+button {
+    background: var(--primary);
+    color: var(--button-text-dark);
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: background 0.15s ease;
+}
+
+button:hover { background: var(--primary-bright); }
+
+button:disabled {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: rgba(255, 255, 255, 0.45) !important;
+    cursor: not-allowed;
+}
+
+.connect-btn {
+    min-width: 160px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+}
+
+.connect-btn:hover {
+    background: var(--primary-bright);
+}
+
+.connect-btn.is-loading { opacity: 0.92; }
+
+.connect-btn.is-loading:disabled {
+    background: var(--primary) !important;
+    color: var(--button-text-dark) !important;
+    cursor: progress;
+}
+
+.connect-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(47, 48, 53, 0.25);
+    border-top-color: var(--button-text-dark);
+    border-right-color: var(--button-text-dark);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: none;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.3));
+}
+
+.connect-btn.is-loading .connect-spinner { display: inline-block; }
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.error-panel {
+    display: none;
+    max-width: 560px;
+    margin: 8vh auto 0;
+    text-align: center;
+}
+
+.error-panel.active { display: block; }
+
+.error-panel h2 {
+    margin: 0 0 0.75rem;
+    color: var(--text);
+    font-size: 1.2rem;
+}
+
+.error-panel p {
+    margin: 0;
+    color: var(--muted);
+}
+
+.controls { display: none; }
+.controls.active { display: block; }
+
+#headerMeta { display: none; }
+#headerMeta.active { display: flex; }
+
+.layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1rem;
+}
+
+.v-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.panel-title {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+input[type="range"] {
+    width: 100%;
+    cursor: pointer;
+}
+
+.volume-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.volume-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary);
+    min-width: 3.5rem;
+    text-align: right;
+}
+
+.volume-value small {
+    font-size: 0.8rem;
+    margin-left: 0.1rem;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+#volume {
+    --slider-fill: 50%;
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 999px;
+    background: transparent;
+    margin: 0;
+    border: 0;
+    outline: none;
+}
+
+#volume::-webkit-slider-runnable-track {
+    height: 6px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(
+        to right,
+        var(--slider-active) 0,
+        var(--slider-active) var(--slider-fill),
+        var(--slider-track) var(--slider-fill),
+        var(--slider-track) 100%
+    );
+}
+
+#volume::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    margin-top: -7px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 2px solid #f2f2ee;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+#volume::-moz-range-track {
+    height: 6px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--slider-track);
+}
+
+#volume::-moz-range-progress {
+    height: 6px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--slider-active);
+}
+
+#volume::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 2px solid #f2f2ee;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.setting-row:last-child { margin-bottom: 0; }
+
+.setting-group {
+    background: var(--surface-tint);
+    margin-inline: -1.25rem;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 1.25rem;
+}
+
+.setting-group-title {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    letter-spacing: 0.1em;
+}
+
+.setting-group .setting-row {
+    margin-bottom: 0.5rem;
+}
+
+.setting-group .setting-row:last-child {
+    margin-bottom: 0;
+}
+
+.setting-row.prompts {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.setting-input-wrap { width: 65%; }
+
+.apply-btn {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.prompt-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.prompt-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+    border-radius: 6px;
+    background: var(--panel-soft);
+    border: 1px solid var(--line);
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+.prompt-item input { margin: 0; }
+
+select,
+input[type="text"] {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    font-size: 0.9rem;
+    background: #5a5b63;
+    color: var(--text);
+}
+
+.eq-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.preset-input-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.preset-input-group select {
+    flex: 1;
+}
+
+.preset-input-group button {
+    padding: 0.5rem 0.75rem;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn {
+    padding: 0.5rem !important;
+}
+
+.btn-icon {
+    width: 20px;
+    height: 20px;
+    filter: brightness(0) invert(0.94);
+    opacity: 0.9;
+}
+
+button:disabled .btn-icon {
+    opacity: 0.4;
+}
+
+.eq-toolbar label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin: 0;
+}
+
+.preset-hint {
+    margin: 0 0 1rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.eq-container {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.3rem;
+    align-items: center;
+    height: 240px;
+    margin-bottom: 1.25rem;
+    padding: 1rem 1.25rem;
+    background: var(--surface-tint);
+    margin-inline: -1.25rem;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+.eq-curve-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 0;
+}
+
+.eq-curve-fill {
+    fill: url(#eqCurveFillGradient);
+}
+
+.eq-curve-path,
+.eq-curve-glow {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.eq-curve-glow {
+    stroke: var(--eq-curve-glow);
+    stroke-width: 6;
+}
+
+.eq-curve-path {
+    stroke: var(--eq-curve-line);
+    stroke-width: 1.8;
+}
+
+.eq-slider-wrapper {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    gap: 0.3rem;
+}
+
+.eq-value {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--primary);
+    min-width: 0;
+    text-align: center;
+}
+
+.eq-slider {
+    --slider-fill: 50%;
+    -webkit-appearance: none;
+    appearance: none;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    width: 28px;
+    height: 140px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    outline: none;
+}
+
+.eq-slider::-webkit-slider-runnable-track {
+    width: 8px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(
+        to top,
+        var(--primary-dark) 0,
+        var(--slider-active) var(--slider-fill),
+        var(--slider-track) var(--slider-fill),
+        var(--slider-track) 100%
+    );
+}
+
+.eq-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    box-sizing: border-box;
+    width: 20px;
+    height: 20px;
+    margin-left: -6px;
+    border: 2px solid #f2f2ee;
+    border-radius: 50%;
+    background: var(--slider-active);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.eq-slider::-moz-range-track {
+    width: 8px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--slider-track);
+}
+
+.eq-slider::-moz-range-progress {
+    width: 8px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(to top, var(--primary-dark) 0%, var(--slider-active) 100%);
+}
+
+.eq-slider::-moz-range-thumb {
+    box-sizing: border-box;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f2f2ee;
+    border-radius: 50%;
+    background: var(--slider-active);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.eq-slider:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 2px rgba(255, 226, 11, 0.25);
+}
+
+.eq-slider:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 2px rgba(255, 226, 11, 0.25);
+}
+
+.eq-slider-wrapper span {
+    font-size: 0.65rem;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.eq-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.eq-actions #activateEqBtn { flex: 1.5; }
+.eq-actions #flattenEqBtn { flex: 1; }
+
+.secondary-btn {
+    background: #5b5c64;
+    color: var(--text);
+}
+
+.secondary-btn:hover { background: #666771; }
+
+.apply-live-btn {
+    background: var(--slider-active);
+    color: var(--button-text-dark);
+}
+
+.apply-live-btn:hover { background: var(--primary-bright); }
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: #4a4b52;
+    padding: 2rem;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    color: var(--accent);
+}
+
+.modal-content ul {
+    padding-left: 1.5rem;
+    margin: 1rem 0;
+}
+
+.modal-content li { margin-bottom: 0.5rem; }
+
+.modal-close-btn {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+/* ─── 880 px: single-column layout, cards intact ─── */
+@media (max-width: 880px) {
+    .layout {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .v-stack { display: contents; }
+    #controls { order: 1; }
+    #eq-card   { order: 2; }
+    #settings-card { order: 3; }
+
+    .page-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "title meta"
+            "btn btn";
+        gap: 0.75rem 1rem;
+        padding: 1rem 1.25rem;
+        align-items: center;
+    }
+
+    .page-header.is-connected {
+        grid-template-areas: "title meta";
+    }
+
+    .page-header-info {
+        display: contents;
+    }
+
+    #headerTitle {
+        grid-area: title;
+        justify-self: start;
+        text-align: left;
+    }
+
+    #headerMeta {
+        grid-area: meta;
+        justify-self: end;
+        align-self: center;
+    }
+
+    #connectBtn {
+        grid-area: btn;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .eq-toolbar { gap: 0.75rem; }
+
+    .eq-container {
+        justify-content: flex-start;
+        gap: 0.2rem;
+        height: 210px;
+        padding: 1rem 0.5rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .eq-slider-wrapper { flex: 1 0 1.6rem; min-width: 1.7rem; gap: 0.2rem; }
+    .eq-value { font-size: 0.65rem; }
+    .eq-slider { width: 20px; height: 116px; }
+    .eq-actions {
+        flex-direction: row;
+    }
+
+    .eq-actions #activateEqBtn { flex: 1.5; }
+    .eq-actions #flattenEqBtn { flex: 1; }
+}
+
+/* ─── 640 px: strip card frames, compact header grid ─── */
+@media (max-width: 640px) {
+    /* No body padding — sections carry their own 12px inset so dividers reach the edge */
+    body { padding: 0; }
+    .page { gap: 0; }
+
+    .card {
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 0;
+    }
+
+    /* Full-width dividers: target layout + each nested section directly
+       (.layout > * + * is useless here because .v-stack has display:contents) */
+    .layout { border-top: 1px solid var(--line); gap: 0; }
+    #eq-card, #settings-card { border-top: 1px solid var(--line); }
+
+    /* Header: 12px side inset */
+    .page-header {
+        padding: 1rem var(--mobile-inset);
+        background: transparent;
+    }
+
+    .error-panel {
+        max-width: none;
+        margin: 0;
+        padding: 1rem var(--mobile-inset);
+        text-align: left;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-tint);
+    }
+
+    .meta-chip { background: transparent; border: 0; padding: 0; }
+
+    /* Sections: uniform balanced 1rem spacing */
+    #controls      { padding: 1rem var(--mobile-inset); }
+    #eq-card       { padding: 1rem var(--mobile-inset); }
+    #settings-card { padding: 1rem var(--mobile-inset); }
+
+    .panel-title { margin-bottom: 0.75rem; }
+
+    #eq-card .panel-title,
+    #eq-card .eq-toolbar,
+    #eq-card .preset-hint,
+    #eq-card .eq-container { margin-bottom: 0.75rem; }
+
+    .setting-group {
+        margin-inline: calc(-1 * var(--mobile-inset));
+        padding-inline: var(--mobile-inset);
+    }
+
+    /* height: auto eliminates the ~66px dead space left by the 210px from the 880px block */
+    .eq-container {
+        height: auto;
+        background: var(--surface-tint);
+        border: 0;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        border-radius: 0;
+        padding: 1rem var(--mobile-inset);
+        margin-inline: calc(-1 * var(--mobile-inset));
+    }
+
+    .setting-row {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+    .setting-input-wrap { width: 65%; }
+
+    .setting-row.prompts {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .setting-row.prompts .setting-input-wrap {
+        width: 100%;
+    }
+
+    .setting-group .setting-row {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .prompt-grid { grid-template-columns: 1fr 1fr; }
+
+    select,
+    input[type="text"] { font-size: 16px; min-height: 44px; line-height: 1.2; }
+
+    .modal-content { border-radius: 0; }
+}
+
+</style>
+</head>
+<body>
+    <div class="page">
+        <div class="card page-header">
+            <div class="page-header-info">
+                <h1 id="headerTitle">Tribit Web Control</h1>
+            </div>
+            <div class="page-header-meta" id="headerMeta">
+                <div class="meta-chip">
+                    <img
+                        id="batteryIcon"
+                        class="battery-icon"
+                        src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTEgMThWNmgxNi4wMjVxLS41LjQtLjg3NS45VDE1LjUyNSA4SDN2OGgxNC4wNXEuMS42MjUuNDUgMS4xMzh0Ljg1Ljg2MnptMTguMjg4LTEuNzg3UTE5IDE1LjkyNCAxOSAxNS41dC4yODgtLjcxMlQyMCAxNC41dC43MTMuMjg4dC4yODcuNzEydC0uMjg4LjcxM1QyMCAxNi41dC0uNzEyLS4yODhtLjAxMi0yLjczN3EwLS40LjAxMy0uNzYydC4xNjItLjcxM3EuMTc1LS4zNS40NjMtLjYxMnQuNTYyLS41MzhxLjMtLjI3NS41NS0uNjEydC4yNS0uNzYzcTAtLjUtLjM4Ny0uOHQtLjkxMy0uM3EtLjUgMC0uODg4LjMyNXQtLjUzNy44MjVMMTcuMyA5cS4yNS0uOSAxLTEuNDVUMjAgN3ExLjEgMCAxLjkxMy42ODh0LjgxMiAxLjczN3EwIC41NzUtLjI4OCAxLjA3NXQtLjcxMi45MjVxLS4yNS4yNS0uNDg4LjQ3NXQtLjM4Ny41NXEtLjE3NS4zNS0uMTI1IDEuMDI1ek00IDE1VjloMTEuNTI1djZ6Ii8+PC9zdmc+"
+                        alt="Battery level unknown"
+                    >
+                    <span id="batteryHeader" class="battery-value">--%</span>
+                </div>
+            </div>
+            <button id="connectBtn" class="connect-btn">
+                <span class="connect-spinner" aria-hidden="true"></span>
+                <span id="connectBtnLabel">Connect to Speaker</span>
+            </button>
+        </div>
+
+        <div id="errorPanel" class="card error-panel">
+            <h2 id="errorTitle">Unable to connect right now</h2>
+            <p id="errorBody">Please make sure the speaker is powered on, nearby, and not already connected to the official app. Sometimes a retry or two is needed to establish a stable link.</p>
+        </div>
+
+        <div class="layout">
+            <div class="v-stack sidebar">
+                <div class="card controls" id="controls">
+                    <h2 class="panel-title">Volume</h2>
+                    <div class="volume-row">
+                        <input type="range" id="volume" min="0" max="100" value="50">
+                        <div class="volume-value"><span id="volLabel">--</span><small>%</small></div>
+                    </div>
+                </div>
+
+                <div id="settings-card" class="card controls">
+                    <h2 class="panel-title">Device Options</h2>
+                    <div class="setting-row">
+                        <span>Auto Off</span>
+                        <div class="setting-input-wrap">
+                            <select id="shutdownSelect">
+                                <option value="0">Never</option>
+                                <option value="1">15 Minutes</option>
+                                <option value="2">30 Minutes</option>
+                                <option value="3">45 Minutes</option>
+                                <option value="4">60 Minutes</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="setting-group">
+                        <span class="setting-group-title">EQ Button Mappings</span>
+                        <div class="setting-row">
+                            <span>LED Off</span>
+                            <div class="setting-input-wrap">
+                                <select id="btn0Select"></select>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <span>White</span>
+                            <div class="setting-input-wrap">
+                                <select id="btn1Select"></select>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <span>Blue</span>
+                            <div class="setting-input-wrap">
+                                <select id="btn2Select"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="setting-row prompts">
+                        <span>Voice & Beep Prompts</span>
+                        <div class="prompt-grid">
+                            <label class="prompt-item"><input type="checkbox" id="prompt-p"> Power</label>
+                            <label class="prompt-item"><input type="checkbox" id="prompt-b"> BT Pair</label>
+                            <label class="prompt-item"><input type="checkbox" id="prompt-l"> Low Batt</label>
+                            <label class="prompt-item"><input type="checkbox" id="prompt-m"> Max Vol</label>
+                            <label class="prompt-item"><input type="checkbox" id="prompt-t"> TWS</label>
+                        </div>
+                    </div>
+                    <button id="applySettingsBtn" class="secondary-btn apply-btn">Apply Settings</button>
+                </div>
+            </div>
+
+            <div class="v-stack main-content">
+                <div id="eq-card" class="card controls eq-card">
+                    <h2 class="panel-title">Equalizer</h2>
+                    <div class="eq-toolbar">
+                        <div class="field-group">
+                            <label>Presets</label>
+                            <div class="preset-input-group">
+                                <select id="eqPreset">
+                                    <option value="254">Custom</option>
+                                    <option value="0">XBass Off</option>
+                                    <option value="1">XBass</option>
+                                    <option value="2">Audiobook</option>
+                                    <option value="3">MaxSound traditional</option>
+                                    <option value="4">Rock</option>
+                                    <option value="5">Jazz</option>
+                                </select>
+                                <button id="saveCustomPresetBtn" class="secondary-btn icon-btn" title="Save local preset">
+                                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTUgMjFxLS44MjUgMC0xLjQxMi0uNTg3VDMgMTlWNXEwLS44MjUuNTg4LTEuNDEyVDUgM2gxMmw0IDR2NS4zcS0uNDc1LS4yLS45ODctLjI2MlQxOSAxMi4wNVY3LjgyNUwxNi4xNzUgNUg1djE0aDZ2MnpNNSA1djE0em04IDE4di0zLjA3NWw1LjUyNS01LjVxLjIyNS0uMjI1LjUtLjMyNXQuNTUtLjFxLjMgMCAuNTc1LjExM3QuNS4zMzdsLjkyNS45MjVxLjIuMjI1LjMxMy41dC4xMTIuNTV0LS4xLjU2M3QtLjMyNS41MTJsLTUuNSA1LjV6bTcuNS02LjU3NWwtLjkyNS0uOTI1em0tNiA1LjA3NWguOTVsMy4wMjUtMy4wNWwtLjQ1LS40NzVsLS40NzUtLjQ1bC0zLjA1IDMuMDI1em0zLjUyNS0zLjUyNWwtLjQ3NS0uNDVsLjkyNS45MjV6TTYgMTBoOVY2SDZ6bTYgOGguMWwyLjktMi44NzVWMTVxMC0xLjI1LS44NzUtMi4xMjVUMTIgMTJ0LTIuMTI1Ljg3NVQ5IDE1dC44NzUgMi4xMjVUMTIgMTgiLz48L3N2Zz4=" alt="Save" class="btn-icon">
+                                </button>
+                                <button id="deleteCustomPresetBtn" class="secondary-btn icon-btn" title="Delete local preset" disabled>
+                                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTcgMjFxLS44MjUgMC0xLjQxMi0uNTg3VDUgMTlWNkg0VjRoNVYzaDZ2MWg1djJoLTF2MTNxMCAuODI1LS41ODcgMS40MTNUMTcgMjF6TTE3IDZIN3YxM2gxMHpNOSAxN2gyVjhIOXptNCAwaDJWOGgtMnpNNyA2djEzeiIvPjwvc3ZnPg==" alt="Delete" class="btn-icon">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="preset-hint">Custom presets are saved locally in this browser.</p>
+                    <div class="eq-container" id="eqContainer">
+                        <svg class="eq-curve-layer" id="eqCurveLayer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                            <defs>
+                                <linearGradient id="eqCurveFillGradient" x1="0" y1="0" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0%" stop-color="var(--slider-active)" stop-opacity="0"></stop>
+                                    <stop offset="100%" stop-color="var(--slider-active)" stop-opacity="var(--eq-curve-fill-top)"></stop>
+                                </linearGradient>
+                            </defs>
+                            <path id="eqCurveFill" class="eq-curve-fill"></path>
+                            <path id="eqCurveGlow" class="eq-curve-glow"></path>
+                            <path id="eqCurvePath" class="eq-curve-path"></path>
+                        </svg>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue0">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="0"><span>80</span></div>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue1">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="1"><span>150</span></div>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue2">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="2"><span>300</span></div>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue3">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="3"><span>600</span></div>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue4">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="4"><span>1.2k</span></div>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue5">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="5"><span>2.5k</span></div>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue6">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="6"><span>5k</span></div>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue7">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="7"><span>9k</span></div>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue8">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="8"><span>13k</span></div>
+                    </div>
+                    <div class="eq-actions">
+                        <button id="activateEqBtn" class="apply-live-btn">Apply to Speaker</button>
+                        <button id="flattenEqBtn" class="secondary-btn">Flatten</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="browserModal" class="modal">
+        <div class="modal-content">
+            <h2>Web Bluetooth Required</h2>
+            <p>Your browser does not support Web Bluetooth, which is required to communicate with the speaker.</p>
+            <p>Requirements:</p>
+            <ul>
+                <li><strong>Chrome, Edge, or Opera</strong> (version 56+)</li>
+                <li><strong>HTTPS connection</strong> or <strong>localhost</strong></li>
+                <li>Bluetooth enabled on your device</li>
+            </ul>
+            <p><strong>Linux users:</strong> You may need to enable <code>chrome://flags/#enable-experimental-web-platform-features</code> for Web Bluetooth support.</p>
+            <p>Mobile: Chrome on Android works well. iOS requires specialized browsers like Bluefy.</p>
+            <button id="browserModalClose" class="modal-close-btn">Close</button>
+        </div>
+    </div>
+    <script>
+(()=>{function _({log:t,onDisconnected:e,onNotification:r}){let a=null,c=null;async function d(y,g=[]){return navigator.bluetooth.requestDevice({filters:y,optionalServices:g})}async function s(y,g){c=y;let I=await y.gatt.connect(),k=await I.getPrimaryService(g.uuids.service),N=await k.getCharacteristic(g.uuids.command);return a=await k.getCharacteristic(g.uuids.response),await a.startNotifications(),a.addEventListener("characteristicvaluechanged",o),y.addEventListener("gattserverdisconnected",f),{device:y,server:I,commandCharacteristic:N}}function o(y){r(new Uint8Array(y.target.value.buffer))}function f(){t("Bluetooth device disconnected","info"),a&&(a.removeEventListener("characteristicvaluechanged",o),a=null),c=null,e()}async function w(y,g){await y.writeValueWithoutResponse(g)}async function L(y){let g=y?.device||c;g?.gatt?.connected&&g.gatt.disconnect()}return{requestDevice:d,connect:s,disconnect:L,write:w}}function l(t){return document.getElementById(t)}function H(){let t=Array.from(document.querySelectorAll(".eq-slider")),e=Array.from(document.querySelectorAll(".eq-slider-wrapper")),r={p:l("prompt-p"),b:l("prompt-b"),l:l("prompt-l"),m:l("prompt-m"),t:l("prompt-t")};return{pageHeader:document.querySelector(".page-header"),headerTitle:l("headerTitle"),headerMeta:l("headerMeta"),controls:Array.from(document.querySelectorAll(".controls")),batteryIcon:l("batteryIcon"),batteryHeader:l("batteryHeader"),connectBtn:l("connectBtn"),connectBtnLabel:l("connectBtnLabel"),errorPanel:l("errorPanel"),errorTitle:l("errorTitle"),errorBody:l("errorBody"),volume:l("volume"),volLabel:l("volLabel"),shutdownSelect:l("shutdownSelect"),btn0Select:l("btn0Select"),btn1Select:l("btn1Select"),btn2Select:l("btn2Select"),promptCheckboxes:r,applySettingsBtn:l("applySettingsBtn"),eqPreset:l("eqPreset"),saveCustomPresetBtn:l("saveCustomPresetBtn"),deleteCustomPresetBtn:l("deleteCustomPresetBtn"),eqContainer:l("eqContainer"),eqCurveLayer:l("eqCurveLayer"),eqCurveFill:l("eqCurveFill"),eqCurveGlow:l("eqCurveGlow"),eqCurvePath:l("eqCurvePath"),eqSliders:t,eqSliderWrappers:e,activateEqBtn:l("activateEqBtn"),flattenEqBtn:l("flattenEqBtn"),browserModal:l("browserModal"),browserModalClose:l("browserModalClose")}}function W(t){return typeof t=="string"&&t.startsWith("custom:")}function qe(t,e){return t.map(r=>parseInt(r,10)).slice(0,e)}function z({storageKey:t,bandCount:e,log:r}){let a=c();function c(){try{let s=localStorage.getItem(t);if(!s)return[];let o=JSON.parse(s);return Array.isArray(o)?o.filter(f=>f&&W(f.id)&&typeof f.name=="string"&&Array.isArray(f.bands)&&f.bands.length===e).map(f=>({id:f.id,name:f.name.trim(),bands:qe(f.bands,e)})).filter(f=>f.name):[]}catch(s){return r(`Failed to load custom presets: ${s.message}`,"err"),[]}}function d(){localStorage.setItem(t,JSON.stringify(a))}return{isCustomPresetValue:W,getAll(){return a.slice()},createId(){return`custom:${Date.now()}:${Math.random().toString(16).slice(2,8)}`},getById(s){return a.find(o=>o.id===s)||null},getByName(s){return a.find(o=>o.name===s)||null},findByBands(s){return a.find(o=>o.bands.length===e&&s.length===e&&o.bands.every((f,w)=>f===s[w]))||null},save(s){let o=a.findIndex(f=>f.id===s.id);o>=0?a[o]=s:a.push(s),a.sort((f,w)=>f.name.localeCompare(w.name)),d()},remove(s){a=a.filter(o=>o.id!==s),d()}}}function G(t,e){return{id:e,bands:new Array(t).fill(0)}}function j(t){let e=Object.fromEntries(t.capabilities.eq.targets.map(r=>[r.value,G(t.capabilities.eq.bandCount,t.capabilities.eq.customPresetId)]));return{connection:{device:null,server:null,commandCharacteristic:null,connected:!1},customEqPresets:[],eqSlots:e,ui:{}}}function E(t,e){let r=e?.capabilities?.eq?.liveTarget||"active";return t.eqSlots[r]}function K(t,e){t.eqSlots=Object.fromEntries(e.capabilities.eq.targets.map(r=>[r.value,G(e.capabilities.eq.bandCount,e.capabilities.eq.customPresetId)]))}function X(t,e){let r=parseInt(t.min,10),a=parseInt(t.max,10),c=(e-r)/(a-r)*100;t.style.setProperty("--slider-fill",`${c}%`)}function Ce(t){return`${t>=0?"+":""}${t}`}function Ee(t){if(t.length===0)return"";if(t.length===1)return`M ${t[0].x} ${t[0].y}`;let e=`M ${t[0].x} ${t[0].y}`;for(let r=0;r<t.length-1;r+=1){let a=t[r-1]||t[r],c=t[r],d=t[r+1],s=t[r+2]||d,o={x:c.x+(d.x-a.x)/6,y:c.y+(d.y-a.y)/6},f={x:d.x-(s.x-c.x)/6,y:d.y-(s.y-c.y)/6};e+=` C ${o.x} ${o.y}, ${f.x} ${f.y}, ${d.x} ${d.y}`}return e}function Y({appTitle:t,dom:e,getProfile:r,state:a,presets:c}){function d(){if(!e.eqCurvePath||!e.eqCurveGlow||!e.eqCurveFill||!e.eqContainer||e.eqSliderWrappers.length===0)return;let n=e.eqContainer.getBoundingClientRect();if(n.width===0||n.height===0)return;e.eqCurveLayer.setAttribute("viewBox",`0 0 ${n.width} ${n.height}`);let i=20,b=e.eqSliderWrappers.map((ze,$)=>{let T=e.eqSliders[$].getBoundingClientRect(),he=parseInt(e.eqSliders[$].value,10),R=parseInt(e.eqSliders[$].min,10),ye=parseInt(e.eqSliders[$].max,10),ge=(he-R)/(ye-R),Se=Math.max(T.height-i,1);return{x:T.left-n.left+T.width/2,y:T.top-n.top+i/2+(1-ge)*Se}}),S=e.eqSliders[0].getBoundingClientRect(),C=S.top-n.top+i/2,M=C+Math.max(S.height-i,1),P=e.eqCurveLayer.querySelector("#eqCurveFillGradient");P&&(P.setAttribute("y1",String(M)),P.setAttribute("y2",String(C)));let x=Ee(b),ve=`${x} L ${b[b.length-1].x} ${n.height} L ${b[0].x} ${n.height} Z`;e.eqCurveFill.setAttribute("d",ve),e.eqCurvePath.setAttribute("d",x),e.eqCurveGlow.setAttribute("d",x)}function s(){if(typeof ResizeObserver<"u"){let n=new ResizeObserver(()=>d());n.observe(e.eqContainer),e.eqSliderWrappers.forEach(i=>n.observe(i))}else window.addEventListener("resize",d)}s();function o(){return r()}function f(){let n=[...o().capabilities.eq.presets,...c.getAll().map(i=>({value:i.id,label:i.name}))];[e.btn0Select,e.btn1Select,e.btn2Select].forEach((i,b)=>{let S=i.value;i.innerHTML="",n.forEach(P=>{let x=document.createElement("option");x.value=P.value,x.textContent=P.label,i.append(x)});let C=a.eqSlots[`btn${b}`],M=C.id!==o().capabilities.eq.customPresetId?String(C.id):c.findByBands(C.bands)?.id||String(o().capabilities.eq.customPresetId);i.value=n.some(P=>P.value===M)?M:n[0].value})}function w(){e.shutdownSelect.innerHTML="",o().capabilities.shutdownOptions.forEach(n=>{let i=document.createElement("option");i.value=n.value,i.textContent=n.label,e.shutdownSelect.append(i)})}function L(n=null){let i=o().getBatteryIconKey(n),b=Number.isFinite(n);e.batteryHeader.textContent=b?`${n}%`:"--%",e.batteryIcon.src=o().batteryIcons[i],e.batteryIcon.alt=b?`Battery level ${n}%`:"Battery level unknown"}function y(n){e.volLabel.textContent=n,e.volume.value=n,X(e.volume,n)}function g(n,i="Connect to Speaker"){e.connectBtnLabel.textContent=i,e.connectBtn.disabled=n,e.connectBtn.classList.toggle("is-loading",n)}function I(n){e.controls.forEach(i=>i.classList.toggle("active",n)),e.headerMeta.classList.toggle("active",n)}function k(n,i){e.errorTitle.textContent=n,e.errorBody.textContent=i,e.errorPanel.classList.add("active")}function N(){e.errorPanel.classList.remove("active")}function oe(){e.browserModal.style.display="flex"}function se(){e.browserModal.style.display="none"}function ce(n){let i=[...o().capabilities.eq.presets,...c.getAll().map(b=>({value:b.id,label:b.name}))];e.eqPreset.innerHTML="",i.forEach(b=>{let S=document.createElement("option");S.value=b.value,S.textContent=b.label,e.eqPreset.append(S)}),e.eqPreset.value=i.some(b=>b.value===n)?n:String(o().capabilities.eq.customPresetId)}function V(){let n=E(a,o()),i=e.eqPreset.value;e.saveCustomPresetBtn.disabled=n.id!==o().capabilities.eq.customPresetId,e.deleteCustomPresetBtn.disabled=!c.isCustomPresetValue(i)}function le(n){e.eqSliders.forEach((i,b)=>{let S=n.bands[b];i.value=S,i.disabled=n.id!==o().capabilities.eq.customPresetId,X(i,S);let C=document.getElementById(`bandValue${b}`);C&&(C.textContent=Ce(S))}),e.eqContainer.style.opacity=n.id!==o().capabilities.eq.customPresetId?"0.5":"1",d()}function ue(n){n.shutdownMode!=null&&(e.shutdownSelect.value=String(n.shutdownMode)),n.prompts&&Object.entries(n.prompts).forEach(([i,b])=>{e.promptCheckboxes[i]&&(e.promptCheckboxes[i].checked=b)})}function A(){let n=E(a,o()),i=n.id!==o().capabilities.eq.customPresetId?String(n.id):c.findByBands(n.bands)?.id||String(o().capabilities.eq.customPresetId);ce(i),le(n),V()}function F(n){e.headerTitle.textContent=n||t}function de(n){F(n),e.pageHeader.classList.add("is-connected"),e.connectBtn.style.display="none",I(!0),f()}function fe(){F(t),e.pageHeader.classList.remove("is-connected"),e.connectBtn.style.display="",g(!1)}function pe(){A(),f()}function me(){F(t),e.pageHeader.classList.remove("is-connected"),f(),w(),L(),y(parseInt(e.volume.value,10)),A()}function be(n){if([e.btn0Select,e.btn1Select,e.btn2Select,e.eqPreset,e.activateEqBtn,e.flattenEqBtn,e.saveCustomPresetBtn,e.deleteCustomPresetBtn].forEach(i=>{i.disabled=n}),n){e.eqSliders.forEach(i=>{i.disabled=!0}),e.eqContainer.style.opacity="0.5";return}A()}return{hideBrowserModal:se,hideErrorPanel:N,renderConnectedState:de,renderDisconnectedState:fe,renderEqSection:A,renderInitial:me,renderSettings:ue,setConnectLoading:g,setControlsVisible:I,setEqInputsDisabled:be,showBrowserModal:oe,showErrorPanel:k,syncActiveTargetSelection:pe,updateBatteryStatus:L,updateCustomPresetControls:V,updateVolumeSlider:y}}function J(t,e,r=[]){let a=10+r.length,c=[8,238,0,0,0,t,e,a&255,a>>8&255,...r],d=c.reduce((s,o)=>s+o&255,0);return new Uint8Array([...c,d])}function Q(t){let e=t instanceof Uint8Array?t:new Uint8Array(t.buffer);return e.length<10?null:{command:e[6],payload:e.slice(9,-1)}}var Pe=[[100,"full"],[84,"level6"],[67,"level5"],[50,"level4"],[34,"level3"],[17,"level2"],[0,"level1"]],we={getDeviceDisplayName(t){return t?.name||"Unknown speaker"},getFriendlyConnectError(t){return!t||t.name==="NotFoundError"||t.message==="User cancelled the requestDevice() chooser."?null:t.name==="NotAllowedError"?{title:"Bluetooth access was blocked",message:"Please allow Bluetooth access in your browser and try connecting again."}:t.name==="NetworkError"||t.name==="InvalidStateError"?{title:"The speaker did not finish connecting",message:"Please check that the speaker is on, nearby, and not currently connected to the official app. A quick retry often helps."}:{title:"Unable to connect right now",message:"Please make sure the speaker is powered on, nearby, and not already connected to the official app. Sometimes a retry or two is needed to establish a stable link."}},getBatteryIconKey(t){if(!Number.isFinite(t))return"unknown";for(let[e,r]of Pe)if(t>=e)return r;return"level1"}};function O(t){return{...we,...t}}var xe=1,U=254,Be={unknown:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTEgMThWNmgxNi4wMjVxLS41LjQtLjg3NS45VDE1LjUyNSA4SDN2OGgxNC4wNXEuMS42MjUuNDUgMS4xMzh0Ljg1Ljg2MnptMTguMjg4LTEuNzg3UTE5IDE1LjkyNCAxOSAxNS41dC4yODgtLjcxMlQyMCAxNC41dC43MTMuMjg4dC4yODcuNzEydC0uMjg4LjcxM1QyMCAxNi41dC0uNzEyLS4yODhtLjAxMi0yLjczN3EwLS40LjAxMy0uNzYydC4xNjItLjcxM3EuMTc1LS4zNS40NjMtLjYxMnQuNTYyLS41MzhxLjMtLjI3NS41NS0uNjEydC4yNS0uNzYzcTAtLjUtLjM4Ny0uOHQtLjkxMy0uM3EtLjUgMC0uODg4LjMyNXQtLjUzNy44MjVMMTcuMyA5cS4yNS0uOSAxLTEuNDVUMjAgN3ExLjEgMCAxLjkxMy42ODh0LjgxMiAxLjczN3EwIC41NzUtLjI4OCAxLjA3NXQtLjcxMi45MjVxLS4yNS4yNS0uNDg4LjQ3NXQtLjM4Ny41NXEtLjE3NS4zNS0uMTI1IDEuMDI1ek00IDE1VjloMTEuNTI1djZ6Ii8+PC9zdmc+",level1:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTEgMThWNmgxOS41djEyem0yLTJoMTUuNVY4SDN6bTE4LjUtMS41di01SDIzdjV6TTQgMTVWOWgydjZ6Ii8+PC9zdmc+",level2:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWg0djZ6bS0zIDNWNmgxOS41djEyem0yLTJoMTUuNVY4SDN6bTE4LjUtMS41di01SDIzdjV6Ii8+PC9zdmc+",level3:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWg2djZ6bS0zIDNWNmgxOS41djEyem0yLTJoMTUuNVY4SDN6bTE4LjUtMS41di01SDIzdjV6Ii8+PC9zdmc+",level4:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWg4djZ6bS0zIDNWNmgxOS41djEyem0yLTJoMTUuNVY4SDN6bTE4LjUtMS41di01SDIzdjV6Ii8+PC9zdmc+",level5:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWgxMHY2em0tMyAzVjZoMTkuNXYxMnptMi0yaDE1LjVWOEgzem0xOC41LTEuNXYtNUgyM3Y1eiIvPjwvc3ZnPg==",level6:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWgxMnY2em0tMyAzVjZoMTkuNXYxMnptMi0yaDE1LjVWOEgzem0xOC41LTEuNXYtNUgyM3Y1eiIvPjwvc3ZnPg==",full:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWgxMy41djZ6bS0zIDNWNmgxOS41djEyem0yLTJoMTUuNVY4SDN6bTE4LjUtMS41di01SDIzdjV6Ii8+PC9zdmc+"};function Z(t,e,r){return Array.from(t.slice(e,e+r)).map(a=>a-8)}var ee=O({id:"xsound-plus-2",bluetoothFilters:[{namePrefix:"LE_Tribit"}],uuids:{service:"21963523-0000-1000-8000-00805f9b34fb",command:"00007777-0000-1000-8000-00805f9b34fb",response:"00008888-0000-1000-8000-00805f9b34fb"},batteryIcons:Be,capabilities:{shutdownOptions:[{value:"0",label:"Never"},{value:"1",label:"15 Minutes"},{value:"2",label:"30 Minutes"},{value:"3",label:"45 Minutes"},{value:"4",label:"60 Minutes"}],prompts:["p","b","l","m","t"],eq:{bandCount:9,customPresetId:U,liveTarget:"active",targets:[{value:"active",label:"Current Settings"},{value:"btn0",label:"LED Off"},{value:"btn1",label:"White LED"},{value:"btn2",label:"Blue LED"}],presets:[{value:"254",label:"Custom"},{value:"0",label:"XBass Off"},{value:"1",label:"XBass"},{value:"2",label:"Audiobook"},{value:"3",label:"MaxSound traditional"},{value:"4",label:"Rock"},{value:"5",label:"Jazz"}]}},matchesDevice(t){return t?.name==="LE_Tribit XSound Plus 2"},getDeviceDisplayName(t){return(t?.name||"Tribit speaker").replace(/^LE_/,"")},buildCommand(t,e=[]){return J(xe,t,e)},getInitialSyncCommands(){return[2,9,17,145,5,25]},createVolumeCommand(t){return this.buildCommand(136,[Math.round(t*31/100)])},createApplyEqCommand(t){return this.buildCommand(130,[t.id,...t.bands.map(e=>e+8)])},createSaveEqCommand(t,e){let r=parseInt(t.replace("btn",""),10);return this.buildCommand(24,[3,r,e.id,...e.bands.map(a=>a+8)])},createSettingsCommands(t){return[this.buildCommand(140,[parseInt(t.shutdownMode,10)]),this.buildCommand(144,this.capabilities.prompts.map(e=>t.prompts[e]?1:0))]},decodeNotification(t){let e=Q(t);if(!e)return null;switch(e.command){case 2:return{batteryPercentage:e.payload[0]};case 9:return{volumePercent:Math.round(e.payload[0]*100/31)};case 5:return e.payload.length>=10?{eqUpdates:[{target:"active",id:e.payload[0],bands:e.payload[0]===U?Z(e.payload,1,9):null}]}:null;case 25:return e.payload.length>=12?{eqUpdates:[{target:`btn${e.payload[1]}`,id:e.payload[2],bands:e.payload[2]===U?Z(e.payload,3,9):null}]}:null;case 17:return e.payload.length>=3?{shutdownMode:String(e.payload[2])}:null;case 145:return e.payload.length>=5?{prompts:{p:!!e.payload[0],b:!!e.payload[1],l:!!e.payload[2],m:!!e.payload[3],t:!!e.payload[4]}}:null;default:return null}}});var D=[ee];function te(){return D[0]}function ne(){return D.flatMap(t=>t.bluetoothFilters||[])}function re(){return Array.from(new Set(D.map(t=>t.uuids?.service).filter(Boolean)))}function ae(t){return D.find(e=>e.matchesDevice?.(t))||null}var Ie="Tribit Web Control",Le="tribit.customEqPresets.v1",u=te();function q(t,e=""){let r=e?`[${e.toUpperCase()}] `:"";console.log(`${r}${t}`)}async function ke(){if("serviceWorker"in navigator)try{await navigator.serviceWorker.register("./sw.js"),q("Service worker registered")}catch(t){q(`Service worker registration failed: ${t.message}`,"err")}}var v=H(),p=j(u),h=z({storageKey:Le,bandCount:u.capabilities.eq.bandCount,log:q});p.customEqPresets=h.getAll();var m=Y({appTitle:Ie,dom:v,getProfile:()=>u,state:p,presets:h}),B=_({log:q,onDisconnected:Te,onNotification:$e});function ie(){p.customEqPresets=h.getAll()}function Ae(t){return t.id!==u.capabilities.eq.customPresetId?String(t.id):h.findByBands(t.bands)?.id||String(u.capabilities.eq.customPresetId)}function Me(t){t&&(Number.isFinite(t.batteryPercentage)&&m.updateBatteryStatus(t.batteryPercentage),Number.isFinite(t.volumePercent)&&m.updateVolumeSlider(t.volumePercent),(t.shutdownMode!=null||t.prompts)&&m.renderSettings(t),Array.isArray(t.eqUpdates)&&t.eqUpdates.length>0&&(t.eqUpdates.forEach(e=>{let r=p.eqSlots[e.target];r&&(r.id=e.id,e.bands&&(r.bands=e.bands.slice()))}),m.syncActiveTargetSelection()))}function $e(t){Me(u.decodeNotification(t,p))}function Te(){p.connection.connected=!1,p.connection.device=null,p.connection.commandCharacteristic=null,p.connection.server=null,m.renderDisconnectedState(),m.setControlsVisible(!1)}async function De(){m.setEqInputsDisabled(!0),q("Syncing initial state...");for(let t of u.getInitialSyncCommands())await B.write(p.connection.commandCharacteristic,u.buildCommand(t)),await new Promise(e=>setTimeout(e,250));m.setEqInputsDisabled(!1),m.renderEqSection()}async function Ne(){if(!navigator.bluetooth){m.showBrowserModal();return}m.hideErrorPanel(),m.setConnectLoading(!0,"Connecting...");try{let t=await B.requestDevice(ne(),re()),e=ae(t);if(!e)throw new Error(`Unsupported speaker selected: ${t.name||"Unknown device"}`);e!==u&&(u=e,K(p,u),p.customEqPresets=h.getAll());let r=await B.connect(t,u);p.connection={...p.connection,...r,connected:!0},m.renderConnectedState(u.getDeviceDisplayName(r.device)),await De()}catch(t){q(t.message,"err");let e=u.getFriendlyConnectError(t);e&&m.showErrorPanel(e.title,e.message),m.setConnectLoading(!1)}}async function Fe(){if(!p.connection.commandCharacteristic)return;let t={shutdownMode:v.shutdownSelect.value,prompts:Object.fromEntries(u.capabilities.prompts.map(a=>[a,!!v.promptCheckboxes[a].checked]))},e=u.createSettingsCommands(t),r=[v.btn0Select,v.btn1Select,v.btn2Select];for(let a=0;a<r.length;a++){let c=r[a].value,d,s;if(h.isCustomPresetValue(c)){let o=h.getById(c);d=u.capabilities.eq.customPresetId,s=o.bands}else d=parseInt(c,10),s=new Array(u.capabilities.eq.bandCount).fill(0);e.push(u.createSaveEqCommand(`btn${a}`,{id:d,bands:s}))}for(let[a,c]of e.entries())await B.write(p.connection.commandCharacteristic,c),a<e.length-1&&await new Promise(d=>setTimeout(d,200));q("TX: Settings applied","tx")}async function Oe(){p.connection.commandCharacteristic&&(await B.write(p.connection.commandCharacteristic,u.createApplyEqCommand(E(p,u))),q("TX: Applied to Live Sound","tx"))}function Ue(){let t=E(p,u);t.id=u.capabilities.eq.customPresetId,t.bands.fill(0),m.renderEqSection(),q("UI: Flattened active curve to 0dB")}function Ve(t){let e=E(p,u),r=parseInt(t.target.dataset.band,10),a=parseInt(t.target.value,10);e.bands[r]=a,e.id===u.capabilities.eq.customPresetId&&(v.eqPreset.value=Ae(e)),m.renderEqSection()}function Re(t){let e=E(p,u),r=t.target.value;if(h.isCustomPresetValue(r)){let a=h.getById(r);if(!a){m.renderEqSection();return}e.id=u.capabilities.eq.customPresetId,e.bands=a.bands.slice()}else e.id=parseInt(r,10);m.renderEqSection()}function _e(){let t=E(p,u);if(t.id!==u.capabilities.eq.customPresetId){window.alert("Switch to a custom EQ curve before saving a custom preset.");return}let e=h.findByBands(t.bands),r=e?e.name:"",a=window.prompt("Name this custom preset:",r);if(a===null)return;let c=a.trim();if(!c){window.alert("Preset name cannot be empty.");return}let d=h.getByName(c),s=e?e.id:h.createId();if(d&&d.id!==s){if(!window.confirm(`Overwrite the existing preset "${c}"?`))return;s=d.id,e&&e.id!==s&&h.remove(e.id)}h.save({id:s,name:c,bands:t.bands.slice()}),ie(),v.eqPreset.value=s,m.syncActiveTargetSelection(),q(`UI: Saved custom preset "${c}"`)}function He(){let t=h.getById(v.eqPreset.value);!t||!window.confirm(`Delete custom preset "${t.name}"?`)||(h.remove(t.id),ie(),m.syncActiveTargetSelection(),q(`UI: Deleted custom preset "${t.name}"`))}function We(){v.connectBtn.addEventListener("click",Ne),v.browserModalClose.addEventListener("click",m.hideBrowserModal),v.flattenEqBtn.addEventListener("click",Ue),v.activateEqBtn.addEventListener("click",Oe),v.applySettingsBtn.addEventListener("click",Fe),v.volume.addEventListener("input",t=>{m.updateVolumeSlider(parseInt(t.target.value,10))}),v.volume.addEventListener("change",async t=>{p.connection.commandCharacteristic&&await B.write(p.connection.commandCharacteristic,u.createVolumeCommand(parseInt(t.target.value,10)))}),v.eqSliders.forEach(t=>{t.addEventListener("input",Ve)}),v.eqPreset.addEventListener("change",Re),v.saveCustomPresetBtn.addEventListener("click",_e),v.deleteCustomPresetBtn.addEventListener("click",He),window.addEventListener("beforeunload",()=>{B.disconnect(p.connection)})}ke();m.renderInitial();m.setControlsVisible(!1);We();})();
+
+</script>
+</body>
+</html>

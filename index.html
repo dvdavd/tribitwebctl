@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; connect-src 'self' https:; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    >
+    <meta name="theme-color" content="#393a3f">
+    <title>Tribit Web Control</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="page">
+        <div class="card page-header">
+            <div class="page-header-info">
+                <h1 id="headerTitle">Tribit Web Control</h1>
+            </div>
+            <div class="page-header-meta" id="headerMeta">
+                <div class="meta-chip">
+                    <img
+                        id="batteryIcon"
+                        class="battery-icon"
+                        src="assets/material-symbols--battery-android-frame-question-sharp.svg"
+                        alt="Battery level unknown"
+                    >
+                    <span id="batteryHeader" class="battery-value">--%</span>
+                </div>
+            </div>
+            <button id="connectBtn" class="connect-btn">
+                <span class="connect-spinner" aria-hidden="true"></span>
+                <span id="connectBtnLabel">Connect to Speaker</span>
+            </button>
+        </div>
+
+        <div id="errorPanel" class="card error-panel">
+            <h2 id="errorTitle">Unable to connect right now</h2>
+            <p id="errorBody">Please make sure the speaker is powered on, nearby, and not already connected to the official app. Sometimes a retry or two is needed to establish a stable link.</p>
+        </div>
+
+        <div class="layout">
+            <div class="v-stack sidebar">
+                <div class="card controls" id="controls">
+                    <h2 class="panel-title">Volume</h2>
+                    <div class="volume-row">
+                        <input type="range" id="volume" min="0" max="100" value="50">
+                        <div class="volume-value"><span id="volLabel">--</span><small>%</small></div>
+                    </div>
+                </div>
+
+                <div id="settings-card" class="card controls">
+                    <h2 class="panel-title">Device Options</h2>
+                    <div class="setting-row">
+                        <span>Auto Off</span>
+                        <div class="setting-input-wrap">
+                            <select id="shutdownSelect">
+                                <option value="0">Never</option>
+                                <option value="1">15 Minutes</option>
+                                <option value="2">30 Minutes</option>
+                                <option value="3">45 Minutes</option>
+                                <option value="4">60 Minutes</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="setting-group">
+                        <span class="setting-group-title">EQ Button Mappings</span>
+                        <div class="setting-row">
+                            <span>LED Off</span>
+                            <div class="setting-input-wrap">
+                                <select id="btn0Select"></select>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <span>White</span>
+                            <div class="setting-input-wrap">
+                                <select id="btn1Select"></select>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <span>Blue</span>
+                            <div class="setting-input-wrap">
+                                <select id="btn2Select"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="setting-row prompts">
+                        <span>Voice & Beep Prompts</span>
+                        <div class="prompt-grid">
+                            <label class="prompt-item"><input type="checkbox" id="prompt-p"> Power</label>
+                            <label class="prompt-item"><input type="checkbox" id="prompt-b"> BT Pair</label>
+                            <label class="prompt-item"><input type="checkbox" id="prompt-l"> Low Batt</label>
+                            <label class="prompt-item"><input type="checkbox" id="prompt-m"> Max Vol</label>
+                            <label class="prompt-item"><input type="checkbox" id="prompt-t"> TWS</label>
+                        </div>
+                    </div>
+                    <button id="applySettingsBtn" class="secondary-btn apply-btn">Apply Settings</button>
+                </div>
+            </div>
+
+            <div class="v-stack main-content">
+                <div id="eq-card" class="card controls eq-card">
+                    <h2 class="panel-title">Equalizer</h2>
+                    <div class="eq-toolbar">
+                        <div class="field-group">
+                            <label>Presets</label>
+                            <div class="preset-input-group">
+                                <select id="eqPreset">
+                                    <option value="254">Custom</option>
+                                    <option value="0">XBass Off</option>
+                                    <option value="1">XBass</option>
+                                    <option value="2">Audiobook</option>
+                                    <option value="3">MaxSound traditional</option>
+                                    <option value="4">Rock</option>
+                                    <option value="5">Jazz</option>
+                                </select>
+                                <button id="saveCustomPresetBtn" class="secondary-btn icon-btn" title="Save local preset">
+                                    <img src="assets/material-symbols--save-as-outline.svg" alt="Save" class="btn-icon">
+                                </button>
+                                <button id="deleteCustomPresetBtn" class="secondary-btn icon-btn" title="Delete local preset" disabled>
+                                    <img src="assets/material-symbols--delete-outline.svg" alt="Delete" class="btn-icon">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="preset-hint">Custom presets are saved locally in this browser.</p>
+                    <div class="eq-container" id="eqContainer">
+                        <svg class="eq-curve-layer" id="eqCurveLayer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                            <defs>
+                                <linearGradient id="eqCurveFillGradient" x1="0" y1="0" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0%" stop-color="var(--slider-active)" stop-opacity="0"></stop>
+                                    <stop offset="100%" stop-color="var(--slider-active)" stop-opacity="var(--eq-curve-fill-top)"></stop>
+                                </linearGradient>
+                            </defs>
+                            <path id="eqCurveFill" class="eq-curve-fill"></path>
+                            <path id="eqCurveGlow" class="eq-curve-glow"></path>
+                            <path id="eqCurvePath" class="eq-curve-path"></path>
+                        </svg>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue0">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="0"><span>80</span></div>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue1">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="1"><span>150</span></div>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue2">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="2"><span>300</span></div>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue3">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="3"><span>600</span></div>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue4">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="4"><span>1.2k</span></div>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue5">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="5"><span>2.5k</span></div>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue6">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="6"><span>5k</span></div>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue7">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="7"><span>9k</span></div>
+                        <div class="eq-slider-wrapper"><div class="eq-value" id="bandValue8">+0</div><input type="range" class="eq-slider" orient="vertical" min="-8" max="8" value="0" data-band="8"><span>13k</span></div>
+                    </div>
+                    <div class="eq-actions">
+                        <button id="activateEqBtn" class="apply-live-btn">Apply to Speaker</button>
+                        <button id="flattenEqBtn" class="secondary-btn">Flatten</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="browserModal" class="modal">
+        <div class="modal-content">
+            <h2>Web Bluetooth Required</h2>
+            <p>Your browser does not support Web Bluetooth, which is required to communicate with the speaker.</p>
+            <p>Requirements:</p>
+            <ul>
+                <li><strong>Chrome, Edge, or Opera</strong> (version 56+)</li>
+                <li><strong>HTTPS connection</strong> or <strong>localhost</strong></li>
+                <li>Bluetooth enabled on your device</li>
+            </ul>
+            <p><strong>Linux users:</strong> You may need to enable <code>chrome://flags/#enable-experimental-web-platform-features</code> for Web Bluetooth support.</p>
+            <p>Mobile: Chrome on Android works well. iOS requires specialized browsers like Bluefy.</p>
+            <button id="browserModalClose" class="modal-close-btn">Close</button>
+        </div>
+    </div>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

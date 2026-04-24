@@ -257,7 +257,7 @@ button:disabled {
 
 .layout {
     display: grid;
-    grid-template-columns: 340px 1fr;
+    grid-template-columns: minmax(0, 1fr) 320px;
     gap: 1rem;
 }
 

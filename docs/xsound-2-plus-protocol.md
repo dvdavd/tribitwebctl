@@ -24,7 +24,8 @@ Reverse-engineered BLE control protocol for the Tribit XSound Plus 2.
 ```
 
 - `type = 0x01` for XSound Plus 2
-- `len = 10 + payload_length`
+- `len_lo = 10 + payload_length`
+- `len_hi = 0`
 - `cksum = sum(all previous bytes) & 0xFF`
 
 Examples:
@@ -34,7 +35,7 @@ Examples:
 ### Speaker → host (`09 FF`)
 
 ```text
-[09] [FF] [00 00 01] [01] [cmd] [len] [00] [payload...] [cksum]
+[09] [FF] [00 00 01] [01] [cmd] [len_lo] [len_hi] [payload...] [cksum]
 ```
 
 - notifications arrive on characteristic `8888`

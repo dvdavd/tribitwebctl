@@ -108,6 +108,11 @@ button {
 
 button:hover { background: var(--primary-bright); }
 
+button:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
 button:disabled {
     background: rgba(255, 255, 255, 0.12) !important;
     color: rgba(255, 255, 255, 0.45) !important;
@@ -159,7 +164,7 @@ button:disabled {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: calc(100dvh - 2 * var(--mobile-inset));
+    min-height: calc(100svh - 2 * var(--mobile-inset));
 }
 
 .diagnostic-link {
@@ -176,6 +181,13 @@ button:disabled {
 
 .diagnostic-link:hover {
     opacity: 0.75;
+}
+
+.diagnostic-link:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+    border-radius: 2px;
+    opacity: 0.9;
 }
 
 .connect-card {
@@ -245,7 +257,7 @@ button:disabled {
 
 .layout {
     display: grid;
-    grid-template-columns: 320px 1fr;
+    grid-template-columns: 340px 1fr;
     gap: 1rem;
 }
 
@@ -352,6 +364,14 @@ input[type="range"] {
     background: var(--primary);
     border: 2px solid #f2f2ee;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+#volume:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px rgba(255, 226, 11, 0.35);
+}
+
+#volume:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 3px rgba(255, 226, 11, 0.35);
 }
 
 #dynamicSettingsContainer {
@@ -491,6 +511,11 @@ input[type="range"] {
     left: 23px;
 }
 
+.prompt-item input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
 select,
 input[type="text"] {
     width: 100%;
@@ -500,6 +525,18 @@ input[type="text"] {
     font-size: 0.9rem;
     background: #5a5b63;
     color: var(--text);
+}
+
+select:focus-visible,
+input[type="text"]:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+}
+
+/* Chromium matches :focus-visible on selects even for mouse clicks.
+   Suppress the ring when the last interaction was a mouse click. */
+.using-mouse select:focus-visible {
+    outline: none;
 }
 
 .eq-toolbar {
@@ -630,6 +667,7 @@ button:disabled .btn-icon {
     appearance: none;
     writing-mode: vertical-lr;
     direction: rtl;
+    touch-action: none;
     width: 28px;
     height: 140px;
     margin: 0;
@@ -690,11 +728,11 @@ button:disabled .btn-icon {
 }
 
 .eq-slider:focus-visible::-webkit-slider-thumb {
-    box-shadow: 0 0 0 2px rgba(255, 226, 11, 0.25);
+    box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--primary);
 }
 
 .eq-slider:focus-visible::-moz-range-thumb {
-    box-shadow: 0 0 0 2px rgba(255, 226, 11, 0.25);
+    box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--primary);
 }
 
 .eq-slider.no-data::-webkit-slider-thumb {
@@ -772,8 +810,8 @@ button:disabled .btn-icon {
     margin-top: 1rem;
 }
 
-/* ─── 880 px: single-column layout, cards intact ─── */
-@media (max-width: 880px) {
+/* ─── 800 px: single-column layout, cards intact ─── */
+@media (max-width: 800px) {
     .layout {
         display: flex;
         flex-direction: column;
@@ -815,7 +853,7 @@ button:disabled .btn-icon {
 
     #connectCard {
         padding: var(--mobile-inset);
-        min-height: 100dvh;
+        min-height: 100svh;
     }
 
     /* Keep connect card styled as a card even when generic cards are flattened */

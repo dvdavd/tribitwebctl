@@ -148,6 +148,7 @@ async function runInitialSync() {
 async function connectToSpeaker() {
     if (!navigator.bluetooth) {
         ui.showBrowserModal();
+        dom.browserModalClose.focus();
         return;
     }
 
@@ -288,6 +289,20 @@ function flattenEq() {
 
     ui.renderEqSection(dom.eqPreset.value);
     log('UI: Flattened active curve to 0dB');
+}
+
+function handleEqSliderTouch(event) {
+    event.preventDefault();
+    const slider = event.currentTarget;
+    const rect = slider.getBoundingClientRect();
+    const touch = event.touches[0] || event.changedTouches[0];
+    const relY = Math.max(0, Math.min(touch.clientY - rect.top, rect.height));
+    // Top of slider = max value, bottom = min value
+    const normalized = 1 - relY / rect.height;
+    const min = parseInt(slider.min, 10);
+    const max = parseInt(slider.max, 10);
+    slider.value = Math.round(min + normalized * (max - min));
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 function handleEqSliderInput(event) {
@@ -539,15 +554,38 @@ async function sendRawDiagnosticHex() {
 function handleHashChange() {
     if (window.location.hash === '#dump' || window.location.hash === '#debug') {
         ui.showDiagnosticView();
+        dom.diagnosticConnectBtn.focus();
     } else {
+        const wasOpen = dom.diagnosticView.style.display === 'flex';
         ui.hideDiagnosticView();
         ui.setDiagnosticControlsVisible(false);
+        if (wasOpen) {
+            const diagLink = document.querySelector('.diagnostic-link');
+            if (diagLink && diagLink.offsetParent !== null) diagLink.focus();
+        }
+    }
+}
+
+function trapFocus(container, event) {
+    const focusable = Array.from(container.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter((el) => el.offsetParent !== null);
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey) {
+        if (document.activeElement === first) { event.preventDefault(); last.focus(); }
+    } else {
+        if (document.activeElement === last) { event.preventDefault(); first.focus(); }
     }
 }
 
 function bindEvents() {
     dom.connectBtn.addEventListener('click', connectToSpeaker);
-    dom.browserModalClose.addEventListener('click', ui.hideBrowserModal);
+    dom.browserModalClose.addEventListener('click', () => {
+        ui.hideBrowserModal();
+        dom.connectBtn.focus();
+    });
     dom.flattenEqBtn.addEventListener('click', flattenEq);
     dom.activateEqBtn.addEventListener('click', applyLiveEq);
     dom.applySettingsBtn.addEventListener('click', applySettings);
@@ -562,6 +600,7 @@ function bindEvents() {
         ui.updateVolumeSlider(parseInt(event.target.value, 10));
     });
 
+
     dom.volume.addEventListener('change', async (event) => {
         if (!state.connection.commandCharacteristic) return;
         await bluetooth.write(
@@ -572,12 +611,35 @@ function bindEvents() {
 
     dom.eqSliders.forEach((slider) => {
         slider.addEventListener('input', handleEqSliderInput);
+        slider.addEventListener('touchstart', handleEqSliderTouch, { passive: false });
+        slider.addEventListener('touchmove', handleEqSliderTouch, { passive: false });
     });
 
     dom.eqPreset.addEventListener('change', handleEqPresetChange);
     dom.saveCustomPresetBtn.addEventListener('click', saveCustomPreset);
     dom.renameCustomPresetBtn.addEventListener('click', renameCustomPreset);
     dom.deleteCustomPresetBtn.addEventListener('click', deleteCustomPreset);
+
+    document.addEventListener('mousedown', () => document.body.classList.add('using-mouse'));
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Tab') document.body.classList.remove('using-mouse');
+        if (event.key === 'Escape') {
+            if (dom.browserModal.style.display === 'flex') {
+                ui.hideBrowserModal();
+                dom.connectBtn.focus();
+            } else if (dom.diagnosticView.style.display === 'flex') {
+                window.location.hash = '';
+            }
+        }
+        if (event.key === 'Tab') {
+            if (dom.browserModal.style.display === 'flex') {
+                trapFocus(dom.browserModal, event);
+            } else if (dom.diagnosticView.style.display === 'flex') {
+                trapFocus(dom.diagnosticView, event);
+            }
+        }
+    });
 
     window.addEventListener('hashchange', handleHashChange);
     handleHashChange();

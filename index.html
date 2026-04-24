@@ -133,9 +133,9 @@
         </div>
     </div>
 
-    <div id="browserModal" class="modal">
+    <div id="browserModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="browserModalTitle">
         <div class="modal-content">
-            <h2>Web Bluetooth Required</h2>
+            <h2 id="browserModalTitle">Web Bluetooth Required</h2>
             <p>Your browser does not support Web Bluetooth, which is required to communicate with the speaker.</p>
             <p>Requirements:</p>
             <ul>
@@ -148,9 +148,9 @@
             <button id="browserModalClose" class="modal-close-btn">Close</button>
         </div>
     </div>
-    <div id="diagnosticView" class="modal" style="display: none; z-index: 100;">
+    <div id="diagnosticView" class="modal" role="dialog" aria-modal="true" aria-labelledby="diagnosticModalTitle" style="display: none; z-index: 100;">
         <div class="modal-content">
-            <h2>Diagnostic Mode</h2>
+            <h2 id="diagnosticModalTitle">Diagnostic Mode</h2>
             <p>Connect any Tribit speaker to generate a diagnostic report. This allows us to support new models.</p>
             <div id="diagnosticStatus" style="margin: 20px 0; font-family: monospace; font-size: 0.9em; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; min-height: 100px; white-space: pre-wrap; max-height: 200px; overflow-y: auto;">
                 Waiting for connection...

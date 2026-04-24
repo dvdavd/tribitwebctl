@@ -19,15 +19,10 @@ export const xsoundPlus2Profile = createProfile({
     capabilities: {
         features: [
             {
-                type: 'select',
+                type: 'toggles',
                 id: 'shutdownMode',
-                label: 'Auto Off',
-                options: [
-                    { value: '0', label: 'Never' },
-                    { value: '1', label: '15 Minutes' },
-                    { value: '2', label: '30 Minutes' },
-                    { value: '3', label: '45 Minutes' },
-                    { value: '4', label: '60 Minutes' }
+                items: [
+                    { key: 'enabled', label: 'Auto Shutdown' }
                 ]
             },
             {
@@ -109,7 +104,7 @@ export const xsoundPlus2Profile = createProfile({
     createSettingsCommands(settings) {
         const promptsFeature = this.capabilities.features.find((f) => f.id === 'prompts');
         return [
-            this.buildCommand(0x8C, [parseInt(settings.shutdownMode, 10)]),
+            this.buildCommand(0x8C, [settings.shutdownMode.enabled ? 1 : 0]),
             this.buildCommand(0x90, promptsFeature.items.map((p) => settings.prompts[p.key] ? 1 : 0))
         ];
     },
@@ -154,7 +149,7 @@ export const xsoundPlus2Profile = createProfile({
                 return null;
             case 0x11:
                 if (packet.payload.length >= 3) {
-                    return { shutdownMode: String(packet.payload[2]) };
+                    return { shutdownMode: { enabled: packet.payload[2] !== 0 } };
                 }
                 return null;
             case 0x91:

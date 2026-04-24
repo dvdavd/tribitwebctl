@@ -233,13 +233,18 @@ async function applySettings() {
     const settingsCommands = profile.createSettingsCommands(settings);
     commands.unshift(...settingsCommands);
 
-    for (const [index, command] of commands.entries()) {
-        await bluetooth.write(state.connection.commandCharacteristic, command);
-        if (index < commands.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 200));
+    dom.applySettingsBtn.disabled = true;
+    try {
+        for (const [index, command] of commands.entries()) {
+            await bluetooth.write(state.connection.commandCharacteristic, command);
+            if (index < commands.length - 1) {
+                await new Promise((resolve) => setTimeout(resolve, 200));
+            }
         }
+        log('TX: Settings applied', 'tx');
+    } finally {
+        dom.applySettingsBtn.disabled = false;
     }
-    log('TX: Settings applied', 'tx');
 }
 
 async function applyLiveEq() {

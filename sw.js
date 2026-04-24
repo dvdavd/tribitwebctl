@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tribit-web-control-v4';
+const CACHE_NAME = 'tribit-web-control-v6';
 const APP_SHELL = [
     './',
     './index.html',
@@ -24,6 +24,7 @@ const APP_SHELL = [
     './assets/material-symbols--battery-android-frame-6-sharp.svg',
     './assets/material-symbols--battery-android-frame-full-sharp.svg',
     './assets/material-symbols--save-as-outline.svg',
+    './assets/ic--baseline-drive-file-rename-outline.svg',
     './assets/material-symbols--delete-outline.svg',
     './assets/appicon.png',
     './assets/appicon-full.png'

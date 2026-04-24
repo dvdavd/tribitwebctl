@@ -1,5 +1,16 @@
 import { getSelectedEqState } from './state.js';
 
+const BATTERY_ICONS = {
+    unknown: 'assets/material-symbols--battery-android-frame-question-sharp.svg',
+    level1: 'assets/material-symbols--battery-android-frame-1-sharp.svg',
+    level2: 'assets/material-symbols--battery-android-frame-2-sharp.svg',
+    level3: 'assets/material-symbols--battery-android-frame-3-sharp.svg',
+    level4: 'assets/material-symbols--battery-android-frame-4-sharp.svg',
+    level5: 'assets/material-symbols--battery-android-frame-5-sharp.svg',
+    level6: 'assets/material-symbols--battery-android-frame-6-sharp.svg',
+    full: 'assets/material-symbols--battery-android-frame-full-sharp.svg'
+};
+
 function setSliderFill(slider, value) {
     const min = parseInt(slider.min, 10);
     const max = parseInt(slider.max, 10);
@@ -37,6 +48,52 @@ function buildSmoothPath(points) {
 }
 
 export function createUi({ appTitle, dom, getProfile, state, presets }) {
+    function bandsMatch(left = [], right = []) {
+        return left.length === right.length && left.every((value, index) => value === right[index]);
+    }
+
+    function findSoftwarePresetByBands(bands) {
+        return profile().capabilities.eq.presets.find(
+            (preset) => preset.software && Array.isArray(preset.bands) && bandsMatch(preset.bands, bands)
+        ) || null;
+    }
+
+    function getRecognizedPresetValue(slot) {
+        if (!slot) return null;
+        if (slot.id !== profile().capabilities.eq.customPresetId) {
+            return String(slot.id);
+        }
+
+        const softwarePreset = findSoftwarePresetByBands(slot.bands);
+        if (softwarePreset) {
+            return softwarePreset.value;
+        }
+
+        const savedPreset = presets.findByBands(slot.bands);
+        return savedPreset ? savedPreset.id : null;
+    }
+
+    function getDeviceEqFallbackLabel(targetKey) {
+        const target = profile().capabilities.eq.targets.find((item) => item.value === targetKey);
+        return target?.label || 'Device EQ';
+    }
+
+    function getPresetBandsForValue(presetValue) {
+        const softwarePreset = profile().capabilities.eq.presets.find(
+            (preset) => preset.value === presetValue && Array.isArray(preset.bands)
+        );
+        if (softwarePreset) {
+            return softwarePreset.bands;
+        }
+
+        if (presets.isCustomPresetValue(presetValue)) {
+            const savedPreset = presets.getById(presetValue);
+            return savedPreset?.bands ?? null;
+        }
+
+        return null;
+    }
+
     function updateEqCurve() {
         if (!dom.eqCurvePath || !dom.eqCurveGlow || !dom.eqCurveFill || !dom.eqContainer || dom.eqSliderWrappers.length === 0) {
             return;
@@ -94,46 +151,155 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
         return getProfile();
     }
 
-    function renderButtonMappingOptions() {
-        const options = [
-            ...profile().capabilities.eq.presets,
-            ...presets.getAll().map((preset) => ({ value: preset.id, label: preset.name }))
-        ];
+    function renderDeviceFeatures() {
+        const features = profile().capabilities.features;
+        if (!features || features.length === 0) {
+            dom.dynamicSettingsContainer.style.display = 'none';
+            return;
+        }
 
-        [dom.btn0Select, dom.btn1Select, dom.btn2Select].forEach((select, index) => {
-            const currentVal = select.value;
-            select.innerHTML = '';
-            options.forEach((optionData) => {
-                const option = document.createElement('option');
-                option.value = optionData.value;
-                option.textContent = optionData.label;
-                select.append(option);
-            });
-            
-            const slot = state.eqSlots[`btn${index}`];
-            const selection = slot.id !== profile().capabilities.eq.customPresetId
-                ? String(slot.id)
-                : presets.findByBands(slot.bands)?.id || String(profile().capabilities.eq.customPresetId);
-            
-            select.value = options.some((opt) => opt.value === selection) ? selection : options[0].value;
-        });
-    }
+        dom.dynamicSettingsContainer.innerHTML = '';
+        dom.dynamicInputs = {};
 
-    function renderShutdownOptions() {
-        dom.shutdownSelect.innerHTML = '';
-        profile().capabilities.shutdownOptions.forEach((optionData) => {
-            const option = document.createElement('option');
-            option.value = optionData.value;
-            option.textContent = optionData.label;
-            dom.shutdownSelect.append(option);
+        let currentSection = document.createElement('div');
+        currentSection.className = 'settings-section default';
+        dom.dynamicSettingsContainer.appendChild(currentSection);
+
+        features.forEach((feature) => {
+            if (feature.type === 'divider') {
+                currentSection = document.createElement('div');
+                currentSection.className = `settings-section ${feature.style || 'original'}`;
+
+                const divider = document.createElement('div');
+                divider.className = 'setting-divider';
+                divider.textContent = feature.label;
+                currentSection.appendChild(divider);
+
+                dom.dynamicSettingsContainer.appendChild(currentSection);
+                return;
+            }
+
+            if (feature.type === 'select') {
+                const row = document.createElement('div');
+                row.className = 'setting-row';
+
+                const span = document.createElement('span');
+                span.textContent = feature.label;
+
+                const wrap = document.createElement('div');
+                wrap.className = 'setting-input-wrap';
+
+                const select = document.createElement('select');
+                select.id = `${feature.id}Select`;
+
+                feature.options.forEach((optionData) => {
+                    const option = document.createElement('option');
+                    option.value = optionData.value;
+                    option.textContent = optionData.label;
+                    select.append(option);
+                });
+
+                wrap.appendChild(select);
+                row.appendChild(span);
+                row.appendChild(wrap);
+                currentSection.appendChild(row);
+                dom.dynamicInputs[feature.id] = select;
+            }
+
+            if (feature.type === 'toggles') {
+                const container = document.createElement('div');
+                container.className = 'setting-row toggles';
+
+                const grid = document.createElement('div');
+                grid.className = 'prompt-grid';
+
+                const inputs = {};
+                feature.items.forEach((item) => {
+                    const label = document.createElement('label');
+                    label.className = 'prompt-item';
+
+                    const input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.id = `${feature.id}-${item.key}`;
+
+                    label.appendChild(input);
+                    label.appendChild(document.createTextNode(` ${item.label}`));
+                    grid.appendChild(label);
+                    inputs[item.key] = input;
+                });
+
+                container.appendChild(grid);
+                currentSection.appendChild(container);
+                dom.dynamicInputs[feature.id] = inputs;
+            }
+
+            if (feature.type === 'eq-mappings') {
+                const grid = document.createElement('div');
+                grid.className = 'setting-mapping-grid';
+
+                const customId = String(profile().capabilities.eq.customPresetId);
+                const baseOptions = [
+                    ...profile().capabilities.eq.presets.filter((p) => p.value !== customId),
+                    ...presets.getAll().map((preset) => ({ value: preset.id, label: preset.name }))
+                ];
+
+                const mappingSelects = {};
+                feature.targets.forEach((target) => {
+                    const row = document.createElement('div');
+                    row.className = 'setting-row';
+
+                    const span = document.createElement('span');
+                    span.textContent = target.label;
+
+                    const wrap = document.createElement('div');
+                    wrap.className = 'setting-input-wrap';
+
+                    const select = document.createElement('select');
+                    select.id = `${target.value}Select`;
+
+                    const slot = state.eqSlots[target.value];
+                    let options = baseOptions;
+                    let selection = baseOptions[0]?.value;
+
+                    if (slot) {
+                        const recognizedValue = getRecognizedPresetValue(slot);
+                        if (recognizedValue) {
+                            selection = recognizedValue;
+                        } else {
+                            selection = customId;
+                            options = [{ value: customId, label: getDeviceEqFallbackLabel(target.value) }, ...baseOptions];
+                        }
+                    }
+
+                    options.forEach((optionData) => {
+                        const option = document.createElement('option');
+                        option.value = optionData.value;
+                        option.textContent = optionData.label;
+                        select.append(option);
+                    });
+
+                    select.value = selection;
+
+                    wrap.appendChild(select);
+                    row.appendChild(span);
+                    row.appendChild(wrap);
+                    grid.appendChild(row);
+                    mappingSelects[target.value] = select;
+                });
+
+                currentSection.appendChild(grid);
+                dom.dynamicInputs['eq-mappings'] = mappingSelects;
+            }
         });
+
+        dom.dynamicSettingsContainer.style.display = 'flex';
     }
 
     function updateBatteryStatus(percentage = null) {
         const iconKey = profile().getBatteryIconKey(percentage);
         const hasKnownLevel = Number.isFinite(percentage);
         dom.batteryHeader.textContent = hasKnownLevel ? `${percentage}%` : '--%';
-        dom.batteryIcon.src = profile().batteryIcons[iconKey];
+        dom.batteryIcon.src = BATTERY_ICONS[iconKey];
         dom.batteryIcon.alt = hasKnownLevel ? `Battery level ${percentage}%` : 'Battery level unknown';
     }
 
@@ -172,6 +338,38 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
         dom.browserModal.style.display = 'none';
     }
 
+    function showDiagnosticView() {
+        dom.diagnosticView.style.display = 'flex';
+        dom.diagnosticStatus.textContent = 'Ready to connect...';
+    }
+
+    function hideDiagnosticView() {
+        dom.diagnosticView.style.display = 'none';
+    }
+
+    function updateDiagnosticStatus(message, append = false) {
+        if (append) {
+            dom.diagnosticStatus.textContent += `\n${message}`;
+            dom.diagnosticStatus.scrollTop = dom.diagnosticStatus.scrollHeight;
+        } else {
+            dom.diagnosticStatus.textContent = message;
+        }
+    }
+
+    function setDiagnosticProgress(percentage) {
+        if (percentage === null) {
+            dom.diagnosticProgressWrap.style.display = 'none';
+            dom.diagnosticProgressBar.style.width = '0%';
+            return;
+        }
+        dom.diagnosticProgressWrap.style.display = 'block';
+        dom.diagnosticProgressBar.style.width = `${percentage}%`;
+    }
+
+    function setDiagnosticControlsVisible(visible) {
+        dom.diagnosticControls.style.display = visible ? 'block' : 'none';
+    }
+
     function renderEqPresetOptions(selectedValue) {
         const options = [
             ...profile().capabilities.eq.presets,
@@ -192,41 +390,102 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
     function updateCustomPresetControls() {
         const selectedEqState = getSelectedEqState(state, profile());
         const presetValue = dom.eqPreset.value;
-        dom.saveCustomPresetBtn.disabled = selectedEqState.id !== profile().capabilities.eq.customPresetId;
-        dom.deleteCustomPresetBtn.disabled = !presets.isCustomPresetValue(presetValue);
+        const isNamedPreset = presets.isCustomPresetValue(presetValue);
+        const presetBands = getPresetBandsForValue(presetValue);
+        const hasChanges = !presetBands || !bandsMatch(selectedEqState.bands, presetBands);
+        dom.saveCustomPresetBtn.disabled = selectedEqState.id !== profile().capabilities.eq.customPresetId || !hasChanges;
+        dom.renameCustomPresetBtn.disabled = !isNamedPreset;
+        dom.deleteCustomPresetBtn.disabled = !isNamedPreset;
     }
 
-    function renderEqSliders(selectedEqState) {
-        dom.eqSliders.forEach((slider, index) => {
-            const value = selectedEqState.bands[index];
-            slider.value = value;
-            slider.disabled = selectedEqState.id !== profile().capabilities.eq.customPresetId;
-            setSliderFill(slider, value);
-            const readout = document.getElementById(`bandValue${index}`);
-            if (readout) readout.textContent = formatEqValue(value);
-        });
-        dom.eqContainer.style.opacity = selectedEqState.id !== profile().capabilities.eq.customPresetId ? '0.5' : '1';
-        updateEqCurve();
-    }
-
-    function renderSettings(settings) {
-        if (settings.shutdownMode != null) {
-            dom.shutdownSelect.value = String(settings.shutdownMode);
-        }
-        if (settings.prompts) {
-            Object.entries(settings.prompts).forEach(([key, checked]) => {
-                if (dom.promptCheckboxes[key]) {
-                    dom.promptCheckboxes[key].checked = checked;
-                }
+    function setEqCurveColor(color) {
+        if (color) {
+            const r = parseInt(color.slice(1, 3), 16);
+            const g = parseInt(color.slice(3, 5), 16);
+            const b = parseInt(color.slice(5, 7), 16);
+            dom.eqCurvePath.style.stroke = `rgba(${r}, ${g}, ${b}, 0.6)`;
+            dom.eqCurveGlow.style.stroke = `rgba(${r}, ${g}, ${b}, 0.12)`;
+            dom.eqCurveLayer.querySelectorAll('stop').forEach((stop) => {
+                stop.style.stopColor = color;
+            });
+        } else {
+            dom.eqCurvePath.style.stroke = '';
+            dom.eqCurveGlow.style.stroke = '';
+            dom.eqCurveLayer.querySelectorAll('stop').forEach((stop) => {
+                stop.style.stopColor = '';
             });
         }
     }
 
-    function renderEqSection() {
+    function renderEqSliders(selectedEqState) {
+        const isCustom = selectedEqState.id === profile().capabilities.eq.customPresetId;
+        const presetValue = dom.eqPreset.value;
+        const presetDef = isCustom
+            ? profile().capabilities.eq.presets.find((p) => p.value === presetValue && p.software)
+            : profile().capabilities.eq.presets.find((p) => p.value === String(selectedEqState.id));
+        const overlayBands = presetDef?.bands;
+        const hasData = isCustom || !!overlayBands;
+
+        // For built-in presets without known bands, show flat (zero) positions
+        const displayBands = isCustom ? selectedEqState.bands
+            : (overlayBands ?? new Array(profile().capabilities.eq.bandCount).fill(0));
+
+        dom.eqSliders.forEach((slider, index) => {
+            const value = displayBands[index] ?? 0;
+            slider.value = value;
+            slider.disabled = false;
+            const readout = document.getElementById(`bandValue${index}`);
+            if (hasData) {
+                slider.classList.remove('no-data');
+                setSliderFill(slider, value);
+                if (readout) readout.textContent = formatEqValue(value);
+            } else {
+                slider.classList.add('no-data');
+                slider.style.setProperty('--slider-fill', '0%');
+                if (readout) readout.textContent = '–';
+            }
+        });
+        dom.eqContainer.style.opacity = hasData ? '1' : '0.5';
+        setEqCurveColor(hasData ? (presetDef?.color ?? null) : null);
+
+        if (hasData) {
+            updateEqCurve();
+        } else {
+            dom.eqCurvePath.setAttribute('d', '');
+            dom.eqCurveGlow.setAttribute('d', '');
+            dom.eqCurveFill.setAttribute('d', '');
+        }
+    }
+
+    function renderSettings(settings) {
+        Object.entries(settings).forEach(([featureId, value]) => {
+            const input = dom.dynamicInputs[featureId];
+            if (!input) return;
+
+            if (input instanceof HTMLSelectElement) {
+                input.value = String(value);
+            } else if (typeof input === 'object' && value != null) {
+                // Toggles or EQ mappings
+                Object.entries(value).forEach(([key, subValue]) => {
+                    const subInput = input[key];
+                    if (!subInput) return;
+                    if (subInput instanceof HTMLInputElement && subInput.type === 'checkbox') {
+                        subInput.checked = !!subValue;
+                    } else if (subInput instanceof HTMLSelectElement) {
+                        subInput.value = String(subValue);
+                    }
+                });
+            }
+        });
+    }
+
+    function renderEqSection(selectedValue = null) {
         const selectedEqState = getSelectedEqState(state, profile());
+        // For built-in presets use the preset id; for custom bands preserve the
+        // current dropdown selection so slider adjustments never auto-switch presets.
         const selection = selectedEqState.id !== profile().capabilities.eq.customPresetId
             ? String(selectedEqState.id)
-            : presets.findByBands(selectedEqState.bands)?.id || String(profile().capabilities.eq.customPresetId);
+            : (selectedValue ?? dom.eqPreset.value);
         renderEqPresetOptions(selection);
         renderEqSliders(selectedEqState);
         updateCustomPresetControls();
@@ -238,45 +497,94 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
 
     function renderConnectedState(deviceName) {
         renderConnectionName(deviceName);
-        dom.pageHeader.classList.add('is-connected');
-        dom.connectBtn.style.display = 'none';
+        dom.connectCard.style.display = 'none';
+        dom.page.style.display = 'flex';
         setControlsVisible(true);
-        renderButtonMappingOptions();
+        renderDeviceFeatures();
     }
 
     function renderDisconnectedState() {
-        renderConnectionName(appTitle);
-        dom.pageHeader.classList.remove('is-connected');
-        dom.connectBtn.style.display = '';
+        dom.connectCard.style.display = '';
+        dom.page.style.display = 'none';
         setConnectLoading(false);
     }
 
-    function syncActiveTargetSelection() {
+    function refreshEqMappingOptions() {
+        const mappingInputs = dom.dynamicInputs['eq-mappings'];
+        if (!mappingInputs) return;
+        const customId = String(profile().capabilities.eq.customPresetId);
+        const baseOptions = [
+            ...profile().capabilities.eq.presets.filter((p) => p.value !== customId),
+            ...presets.getAll().map((preset) => ({ value: preset.id, label: preset.name }))
+        ];
+        Object.entries(mappingInputs).forEach(([targetKey, select]) => {
+            const slot = state.eqSlots[targetKey];
+            let options = baseOptions;
+            let selection = baseOptions[0]?.value;
+
+            if (slot) {
+                const recognizedValue = getRecognizedPresetValue(slot);
+                if (recognizedValue) {
+                    selection = recognizedValue;
+                } else {
+                    selection = customId;
+                    options = [{ value: customId, label: getDeviceEqFallbackLabel(targetKey) }, ...baseOptions];
+                }
+            }
+
+            select.innerHTML = '';
+            options.forEach((optionData) => {
+                const option = document.createElement('option');
+                option.value = optionData.value;
+                option.textContent = optionData.label;
+                select.appendChild(option);
+            });
+            select.value = selection;
+        });
+    }
+
+    function syncActiveTargetSelection({ matchPreset = true } = {}) {
+        if (matchPreset) {
+            // Device-driven update: match bands to a named preset if one exists
+            const selectedEqState = getSelectedEqState(state, profile());
+            if (selectedEqState.id === profile().capabilities.eq.customPresetId) {
+                const softwarePreset = findSoftwarePresetByBands(selectedEqState.bands);
+                const savedPreset = presets.findByBands(selectedEqState.bands);
+                dom.eqPreset.value = softwarePreset?.value
+                    || savedPreset?.id
+                    || String(profile().capabilities.eq.customPresetId);
+            }
+        }
         renderEqSection();
-        renderButtonMappingOptions();
+        refreshEqMappingOptions();
     }
 
     function renderInitial() {
         renderConnectionName(appTitle);
-        dom.pageHeader.classList.remove('is-connected');
-        renderButtonMappingOptions();
-        renderShutdownOptions();
+        renderDeviceFeatures();
         updateBatteryStatus();
         updateVolumeSlider(parseInt(dom.volume.value, 10));
         renderEqSection();
     }
 
     function setEqInputsDisabled(disabled) {
-        [
-            dom.btn0Select,
-            dom.btn1Select,
-            dom.btn2Select,
+        const toDisable = [
             dom.eqPreset,
             dom.activateEqBtn,
             dom.flattenEqBtn,
             dom.saveCustomPresetBtn,
             dom.deleteCustomPresetBtn
-        ].forEach((element) => {
+        ];
+        
+        Object.values(dom.dynamicInputs).forEach(input => {
+            if (input instanceof HTMLElement) {
+                toDisable.push(input);
+            } else if (typeof input === 'object') {
+                Object.values(input).forEach(subInput => toDisable.push(subInput));
+            }
+        });
+
+        toDisable.forEach((element) => {
             element.disabled = disabled;
         });
         if (disabled) {
@@ -301,6 +609,11 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
         setControlsVisible,
         setEqInputsDisabled,
         showBrowserModal,
+        showDiagnosticView,
+        hideDiagnosticView,
+        updateDiagnosticStatus,
+        setDiagnosticProgress,
+        setDiagnosticControlsVisible,
         showErrorPanel,
         syncActiveTargetSelection,
         updateBatteryStatus,

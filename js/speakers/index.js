@@ -8,7 +8,6 @@ export { createProfile } from './base.js';
  *   id: string                         Unique identifier (e.g. 'xsound-plus-2')
  *   bluetoothFilters: object[]         Web Bluetooth requestDevice filters
  *   uuids: { service, command, response }  BLE service/characteristic UUIDs
- *   batteryIcons: Record<string, string>   Map of icon key → asset URL
  *   capabilities: {
  *     shutdownOptions: { value, label }[]
  *     prompts: string[]                   Prompt toggle keys (order matters for commands)

@@ -52,15 +52,22 @@ const bluetooth = createBluetoothClient({
     onNotification: handleNotification
 });
 
+let diagnosticBuffer = null;
+let customEqBandsBuffer = null;
+let editedPresetLabel = null; // label of built-in preset last used as an editing base
+
 function refreshPresetCache() {
     state.customEqPresets = presets.getAll();
 }
 
-function getCustomPresetSelection(eqState) {
-    if (eqState.id !== profile.capabilities.eq.customPresetId) {
-        return String(eqState.id);
-    }
-    return presets.findByBands(eqState.bands)?.id || String(profile.capabilities.eq.customPresetId);
+function bandsMatch(left = [], right = []) {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function findSoftwarePresetByBands(bands) {
+    return profile.capabilities.eq.presets.find(
+        (preset) => preset.software && Array.isArray(preset.bands) && bandsMatch(preset.bands, bands)
+    ) || null;
 }
 
 function applyDecodedUpdate(update) {
@@ -79,6 +86,7 @@ function applyDecodedUpdate(update) {
     }
 
     if (Array.isArray(update.eqUpdates) && update.eqUpdates.length > 0) {
+        let presetsChanged = false;
         update.eqUpdates.forEach((eqUpdate) => {
             const slot = state.eqSlots[eqUpdate.target];
             if (!slot) return;
@@ -86,12 +94,34 @@ function applyDecodedUpdate(update) {
             if (eqUpdate.bands) {
                 slot.bands = eqUpdate.bands.slice();
             }
+            // Auto-seed a named preset for button slots with custom EQ that have no local match
+            if (eqUpdate.target !== profile.capabilities.eq.liveTarget
+                && slot.id === profile.capabilities.eq.customPresetId
+                && eqUpdate.bands
+                && !findSoftwarePresetByBands(slot.bands)
+                && !presets.findByBands(slot.bands)) {
+                const targetDef = profile.capabilities.eq.targets.find((t) => t.value === eqUpdate.target);
+                if (targetDef) {
+                    const name = targetDef.label;
+                    const existing = presets.getByName(name);
+                    const presetId = existing ? existing.id : presets.createId();
+                    presets.save({ id: presetId, name, bands: slot.bands.slice() });
+                    presetsChanged = true;
+                }
+            }
         });
+        if (presetsChanged) refreshPresetCache();
         ui.syncActiveTargetSelection();
     }
 }
 
 function handleNotification(value) {
+    if (diagnosticBuffer) {
+        diagnosticBuffer.notifications.push({
+            time: new Date().toISOString(),
+            hex: Array.from(value).map((b) => b.toString(16).padStart(2, '0')).join(' ')
+        });
+    }
     applyDecodedUpdate(profile.decodeNotification(value, state));
 }
 
@@ -159,30 +189,49 @@ async function connectToSpeaker() {
 
 async function applySettings() {
     if (!state.connection.commandCharacteristic) return;
-    const settings = {
-        shutdownMode: dom.shutdownSelect.value,
-        prompts: Object.fromEntries(
-            profile.capabilities.prompts.map((prompt) => [prompt, !!dom.promptCheckboxes[prompt].checked])
-        )
-    };
+    
+    const settings = {};
+    const commands = [];
 
-    const commands = profile.createSettingsCommands(settings);
-
-    // Add hardware button mapping commands
-    const btnSelects = [dom.btn0Select, dom.btn1Select, dom.btn2Select];
-    for (let i = 0; i < btnSelects.length; i++) {
-        const value = btnSelects[i].value;
-        let id, bands;
-        if (presets.isCustomPresetValue(value)) {
-            const preset = presets.getById(value);
-            id = profile.capabilities.eq.customPresetId;
-            bands = preset.bands;
-        } else {
-            id = parseInt(value, 10);
-            bands = new Array(profile.capabilities.eq.bandCount).fill(0);
+    profile.capabilities.features.forEach((feature) => {
+        if (feature.type === 'select') {
+            settings[feature.id] = dom.dynamicInputs[feature.id].value;
+        } else if (feature.type === 'toggles') {
+            settings[feature.id] = Object.fromEntries(
+                Object.entries(dom.dynamicInputs[feature.id]).map(([key, input]) => [key, !!input.checked])
+            );
+        } else if (feature.type === 'eq-mappings') {
+            const mappingSelects = dom.dynamicInputs['eq-mappings'];
+            for (const [targetKey, select] of Object.entries(mappingSelects)) {
+                const value = select.value;
+                let id, bands;
+                const softwarePreset = profile.capabilities.eq.presets.find(
+                    (p) => p.value === value && p.software && p.bands
+                );
+                if (softwarePreset) {
+                    id = profile.capabilities.eq.customPresetId;
+                    bands = softwarePreset.bands.slice();
+                } else if (presets.isCustomPresetValue(value)) {
+                    const preset = presets.getById(value);
+                    id = profile.capabilities.eq.customPresetId;
+                    bands = preset.bands;
+                } else {
+                    id = parseInt(value, 10);
+                    if (id === profile.capabilities.eq.customPresetId) {
+                        // "Device EQ" placeholder — preserve the bands already on the slot
+                        bands = state.eqSlots[targetKey].bands.slice();
+                    } else {
+                        bands = new Array(profile.capabilities.eq.bandCount).fill(0);
+                    }
+                }
+                state.eqSlots[targetKey] = { id, bands: bands.slice() };
+                commands.push(profile.createSaveEqCommand(targetKey, { id, bands }));
+            }
         }
-        commands.push(profile.createSaveEqCommand(`btn${i}`, { id, bands }));
-    }
+    });
+
+    const settingsCommands = profile.createSettingsCommands(settings);
+    commands.unshift(...settingsCommands);
 
     for (const [index, command] of commands.entries()) {
         await bluetooth.write(state.connection.commandCharacteristic, command);
@@ -204,36 +253,102 @@ async function applyLiveEq() {
 
 function flattenEq() {
     const selectedEqState = getSelectedEqState(state, profile);
+    const currentValue = dom.eqPreset.value;
+    const selectedSoftwarePreset = profile.capabilities.eq.presets.find(
+        (preset) => preset.value === currentValue && preset.software && Array.isArray(preset.bands)
+    );
+    const selectedBuiltInPreset = profile.capabilities.eq.presets.find(
+        (preset) => preset.value === currentValue && Array.isArray(preset.bands)
+    );
+    const selectedCustomPreset = presets.isCustomPresetValue(currentValue)
+        ? presets.getById(currentValue)
+        : null;
+
     selectedEqState.id = profile.capabilities.eq.customPresetId;
     selectedEqState.bands.fill(0);
-    ui.renderEqSection();
+
+    if (selectedCustomPreset) {
+        dom.eqPreset.value = selectedCustomPreset.id;
+        editedPresetLabel = null;
+    } else if (selectedSoftwarePreset) {
+        dom.eqPreset.value = selectedSoftwarePreset.value;
+        editedPresetLabel = selectedSoftwarePreset.label;
+    } else if (selectedBuiltInPreset) {
+        dom.eqPreset.value = selectedBuiltInPreset.value;
+        editedPresetLabel = selectedBuiltInPreset.label;
+    } else {
+        dom.eqPreset.value = String(profile.capabilities.eq.customPresetId);
+        editedPresetLabel = null;
+    }
+
+    ui.renderEqSection(dom.eqPreset.value);
     log('UI: Flattened active curve to 0dB');
 }
 
 function handleEqSliderInput(event) {
     const selectedEqState = getSelectedEqState(state, profile);
     const bandIndex = parseInt(event.target.dataset.band, 10);
-    const value = parseInt(event.target.value, 10);
-    selectedEqState.bands[bandIndex] = value;
-    if (selectedEqState.id === profile.capabilities.eq.customPresetId) {
-        dom.eqPreset.value = getCustomPresetSelection(selectedEqState);
+    const presetValue = dom.eqPreset.value;
+    const selectedSoftwarePreset = profile.capabilities.eq.presets.find(
+        (preset) => preset.value === presetValue && preset.software
+    );
+
+    if (selectedEqState.id !== profile.capabilities.eq.customPresetId) {
+        // Editing from a built-in preset — seed bands from overlay and switch to Custom
+        const presetDef = profile.capabilities.eq.presets.find(
+            (p) => p.value === String(selectedEqState.id)
+        );
+        editedPresetLabel = presetDef?.label ?? null;
+        selectedEqState.bands = presetDef?.bands
+            ? presetDef.bands.slice()
+            : new Array(profile.capabilities.eq.bandCount).fill(0);
+        selectedEqState.id = profile.capabilities.eq.customPresetId;
+        dom.eqPreset.value = String(profile.capabilities.eq.customPresetId);
+    } else if (selectedSoftwarePreset) {
+        editedPresetLabel = selectedSoftwarePreset.label;
     }
+
+    selectedEqState.bands[bandIndex] = parseInt(event.target.value, 10);
     ui.renderEqSection();
 }
 
 function handleEqPresetChange(event) {
     const selectedEqState = getSelectedEqState(state, profile);
     const presetValue = event.target.value;
-    if (presets.isCustomPresetValue(presetValue)) {
-        const preset = presets.getById(presetValue);
-        if (!preset) {
-            ui.renderEqSection();
-            return;
+    const customId = profile.capabilities.eq.customPresetId;
+    const softwarePreset = profile.capabilities.eq.presets.find(
+        (p) => p.value === presetValue && p.software
+    );
+
+    if (softwarePreset?.bands) {
+        // Software preset: load bands into custom slot, keep dropdown on this preset
+        if (selectedEqState.id === customId) {
+            customEqBandsBuffer = selectedEqState.bands.slice();
         }
-        selectedEqState.id = profile.capabilities.eq.customPresetId;
-        selectedEqState.bands = preset.bands.slice();
+        editedPresetLabel = softwarePreset.label;
+        selectedEqState.id = customId;
+        selectedEqState.bands = softwarePreset.bands.slice();
+    } else if (parseInt(presetValue, 10) === customId && !presets.isCustomPresetValue(presetValue)) {
+        // Returning to unnamed Custom — restore buffered bands if available
+        selectedEqState.id = customId;
+        editedPresetLabel = null;
+        if (customEqBandsBuffer) {
+            selectedEqState.bands = customEqBandsBuffer.slice();
+        }
     } else {
-        selectedEqState.id = parseInt(presetValue, 10);
+        // Leaving Custom (or loading a named preset) — save current bands first
+        if (selectedEqState.id === customId) {
+            customEqBandsBuffer = selectedEqState.bands.slice();
+            editedPresetLabel = null;
+        }
+        if (presets.isCustomPresetValue(presetValue)) {
+            const preset = presets.getById(presetValue);
+            if (!preset) { ui.renderEqSection(); return; }
+            selectedEqState.id = customId;
+            selectedEqState.bands = preset.bands.slice();
+        } else {
+            selectedEqState.id = parseInt(presetValue, 10);
+        }
     }
     ui.renderEqSection();
 }
@@ -245,38 +360,74 @@ function saveCustomPreset() {
         return;
     }
 
-    const existingMatch = presets.findByBands(selectedEqState.bands);
-    const suggestedName = existingMatch ? existingMatch.name : '';
-    const input = window.prompt('Name this custom preset:', suggestedName);
-    if (input === null) return;
+    const currentValue = dom.eqPreset.value;
+    const existing = presets.isCustomPresetValue(currentValue) ? presets.getById(currentValue) : null;
+    const builtInNames = profile.capabilities.eq.presets.map((p) => p.label.toLowerCase());
+    const needsDifferentName = existing && !bandsMatch(existing.bands, selectedEqState.bands);
 
+    const defaultName = needsDifferentName ? `${existing.name} (edited)`
+        : existing ? existing.name
+        : editedPresetLabel ? `${editedPresetLabel} (edited)`
+        : '';
+    const input = window.prompt('Name this custom preset:', defaultName);
+    if (input === null) return;
     const name = input.trim();
     if (!name) {
         window.alert('Preset name cannot be empty.');
         return;
     }
+    if (name.toLowerCase() === 'custom' || builtInNames.includes(name.toLowerCase())) {
+        window.alert(`"${name}" is a reserved preset name. Please choose a different name.`);
+        return;
+    }
 
-    const existingByName = presets.getByName(name);
-    let presetId = existingMatch ? existingMatch.id : presets.createId();
-
-    if (existingByName && existingByName.id !== presetId) {
-        const shouldOverwrite = window.confirm(`Overwrite the existing preset "${name}"?`);
-        if (!shouldOverwrite) return;
-        presetId = existingByName.id;
-        if (existingMatch && existingMatch.id !== presetId) {
-            presets.remove(existingMatch.id);
+    let presetId;
+    if (existing && existing.name === name) {
+        // Same name — overwrite the current preset
+        presetId = existing.id;
+    } else {
+        const existingByName = presets.getByName(name);
+        if (existingByName) {
+            const shouldOverwrite = window.confirm(`Overwrite the existing preset "${name}"?`);
+            if (!shouldOverwrite) return;
+            presetId = existingByName.id;
+        } else {
+            presetId = presets.createId();
         }
     }
 
-    presets.save({
-        id: presetId,
-        name,
-        bands: selectedEqState.bands.slice()
-    });
+    presets.save({ id: presetId, name, bands: selectedEqState.bands.slice() });
+    editedPresetLabel = null;
+    refreshPresetCache();
+    ui.renderEqSection(presetId);
+    ui.syncActiveTargetSelection({ matchPreset: false });
+    log(`UI: Saved custom preset "${name}"`);
+}
+
+function renameCustomPreset() {
+    const presetId = dom.eqPreset.value;
+    const preset = presets.getById(presetId);
+    if (!preset) return;
+
+    const input = window.prompt('Rename preset:', preset.name);
+    if (input === null) return;
+    const name = input.trim();
+    if (!name) { window.alert('Preset name cannot be empty.'); return; }
+    if (name.toLowerCase() === 'custom') { window.alert('"Custom" is reserved. Please choose a different name.'); return; }
+    if (name === preset.name) return;
+
+    const existingByName = presets.getByName(name);
+    if (existingByName && existingByName.id !== preset.id) {
+        const shouldOverwrite = window.confirm(`A preset named "${name}" already exists. Replace it?`);
+        if (!shouldOverwrite) return;
+        presets.remove(existingByName.id);
+    }
+
+    presets.save({ id: preset.id, name, bands: preset.bands.slice() });
     refreshPresetCache();
     dom.eqPreset.value = presetId;
-    ui.syncActiveTargetSelection();
-    log(`UI: Saved custom preset "${name}"`);
+    ui.syncActiveTargetSelection({ matchPreset: false });
+    log(`UI: Renamed preset to "${name}"`);
 }
 
 function deleteCustomPreset() {
@@ -288,8 +439,105 @@ function deleteCustomPreset() {
 
     presets.remove(preset.id);
     refreshPresetCache();
-    ui.syncActiveTargetSelection();
+    ui.syncActiveTargetSelection({ matchPreset: false });
     log(`UI: Deleted custom preset "${preset.name}"`);
+}
+
+async function connectForDiagnostic() {
+    ui.updateDiagnosticStatus('Opening Bluetooth selector...');
+    try {
+        const device = await bluetooth.requestDevice(
+            [{ namePrefix: 'LE_' }, { namePrefix: 'Tribit' }],
+            getBluetoothOptionalServices()
+        );
+
+        ui.updateDiagnosticStatus(`Connected to ${device.name || 'Unknown'}. Reading GATT...`);
+        
+        // We use a dummy profile just to establish the connection and subscribe to notifications
+        const dummyProfile = {
+            uuids: {
+                service: '21963523-0000-1000-8000-00805f9b34fb', // Common Tribit service
+                command: '00007777-0000-1000-8000-00805f9b34fb',
+                response: '00008888-0000-1000-8000-00805f9b34fb'
+            }
+        };
+
+        const connection = await bluetooth.connect(device, dummyProfile);
+        state.connection = { ...state.connection, ...connection, connected: true };
+
+        ui.updateDiagnosticStatus('Handshake active. Please press speaker buttons now!');
+        ui.updateDiagnosticStatus('Sniffing data for 15 seconds...', true);
+        ui.setDiagnosticControlsVisible(true);
+
+        diagnosticBuffer = {
+            timestamp: new Date().toISOString(),
+            deviceName: device.name,
+            notifications: []
+        };
+
+        const deviceInfo = await bluetooth.dumpDeviceInfo(device);
+        diagnosticBuffer.deviceInfo = deviceInfo;
+
+        let countdown = 15;
+        ui.setDiagnosticProgress(100);
+        const interval = setInterval(() => {
+            countdown -= 1;
+            ui.setDiagnosticProgress((countdown / 15) * 100);
+            if (countdown <= 0) clearInterval(interval);
+        }, 1000);
+
+        await new Promise((resolve) => setTimeout(resolve, 15000));
+        ui.setDiagnosticProgress(null);
+
+        const blob = new Blob([JSON.stringify(diagnosticBuffer, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `tribit-diagnostic-${device.name || 'unknown'}-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        ui.updateDiagnosticStatus('DUMP COMPLETE! File downloaded.', true);
+        window.alert('Diagnostic dump complete and downloaded.');
+    } catch (error) {
+        log(`Diagnostic failed: ${error.message}`, 'err');
+        ui.updateDiagnosticStatus(`Error: ${error.message}`, true);
+    } finally {
+        diagnosticBuffer = null;
+        if (state.connection.connected) {
+            bluetooth.disconnect(state.connection);
+        }
+    }
+}
+
+async function sendRawDiagnosticHex() {
+    if (!state.connection.connected || !state.connection.commandCharacteristic) {
+        ui.updateDiagnosticStatus('Cannot send: Not connected to command characteristic.', true);
+        return;
+    }
+
+    const hexString = dom.diagnosticHexInput.value.replace(/\s+/g, '');
+    if (!/^[0-9A-Fa-f]+$/.test(hexString) || hexString.length % 2 !== 0) {
+        ui.updateDiagnosticStatus('Error: Invalid hex string. Use pairs like "09 FF".', true);
+        return;
+    }
+
+    const bytes = new Uint8Array(hexString.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+    try {
+        await bluetooth.write(state.connection.commandCharacteristic, bytes);
+        ui.updateDiagnosticStatus(`TX -> ${dom.diagnosticHexInput.value}`, true);
+    } catch (error) {
+        ui.updateDiagnosticStatus(`Write Error: ${error.message}`, true);
+    }
+}
+
+function handleHashChange() {
+    if (window.location.hash === '#dump' || window.location.hash === '#debug') {
+        ui.showDiagnosticView();
+    } else {
+        ui.hideDiagnosticView();
+        ui.setDiagnosticControlsVisible(false);
+    }
 }
 
 function bindEvents() {
@@ -298,6 +546,12 @@ function bindEvents() {
     dom.flattenEqBtn.addEventListener('click', flattenEq);
     dom.activateEqBtn.addEventListener('click', applyLiveEq);
     dom.applySettingsBtn.addEventListener('click', applySettings);
+
+    dom.diagnosticConnectBtn.addEventListener('click', connectForDiagnostic);
+    dom.diagnosticSendBtn.addEventListener('click', sendRawDiagnosticHex);
+    dom.diagnosticCloseBtn.addEventListener('click', () => {
+        window.location.hash = '';
+    });
 
     dom.volume.addEventListener('input', (event) => {
         ui.updateVolumeSlider(parseInt(event.target.value, 10));
@@ -317,7 +571,11 @@ function bindEvents() {
 
     dom.eqPreset.addEventListener('change', handleEqPresetChange);
     dom.saveCustomPresetBtn.addEventListener('click', saveCustomPreset);
+    dom.renameCustomPresetBtn.addEventListener('click', renameCustomPreset);
     dom.deleteCustomPresetBtn.addEventListener('click', deleteCustomPreset);
+
+    window.addEventListener('hashchange', handleHashChange);
+    handleHashChange();
 
     window.addEventListener('beforeunload', () => {
         bluetooth.disconnect(state.connection);

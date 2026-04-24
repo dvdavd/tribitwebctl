@@ -4,39 +4,62 @@ import { createProfile } from './base.js';
 const DEVICE_TYPE = 0x01;
 const CUSTOM_PRESET_ID = 254;
 
-const BATTERY_ICONS = {
-    unknown: 'assets/material-symbols--battery-android-frame-question-sharp.svg',
-    level1: 'assets/material-symbols--battery-android-frame-1-sharp.svg',
-    level2: 'assets/material-symbols--battery-android-frame-2-sharp.svg',
-    level3: 'assets/material-symbols--battery-android-frame-3-sharp.svg',
-    level4: 'assets/material-symbols--battery-android-frame-4-sharp.svg',
-    level5: 'assets/material-symbols--battery-android-frame-5-sharp.svg',
-    level6: 'assets/material-symbols--battery-android-frame-6-sharp.svg',
-    full: 'assets/material-symbols--battery-android-frame-full-sharp.svg'
-};
-
 function normalizeBands(payload, startIndex, count) {
     return Array.from(payload.slice(startIndex, startIndex + count)).map((value) => value - 8);
 }
 
 export const xsoundPlus2Profile = createProfile({
     id: 'xsound-plus-2',
-    bluetoothFilters: [{ namePrefix: 'LE_Tribit' }],
+    bluetoothFilters: [{ namePrefix: 'LE_Tribit XSound Plus 2'}],
     uuids: {
         service: '21963523-0000-1000-8000-00805f9b34fb',
         command: '00007777-0000-1000-8000-00805f9b34fb',
         response: '00008888-0000-1000-8000-00805f9b34fb'
     },
-    batteryIcons: BATTERY_ICONS,
     capabilities: {
-        shutdownOptions: [
-            { value: '0', label: 'Never' },
-            { value: '1', label: '15 Minutes' },
-            { value: '2', label: '30 Minutes' },
-            { value: '3', label: '45 Minutes' },
-            { value: '4', label: '60 Minutes' }
+        features: [
+            {
+                type: 'select',
+                id: 'shutdownMode',
+                label: 'Auto Off',
+                options: [
+                    { value: '0', label: 'Never' },
+                    { value: '1', label: '15 Minutes' },
+                    { value: '2', label: '30 Minutes' },
+                    { value: '3', label: '45 Minutes' },
+                    { value: '4', label: '60 Minutes' }
+                ]
+            },
+            {
+                type: 'divider',
+                style: 'alternate',
+                label: 'EQ Button Mappings'
+            },
+            {
+                type: 'eq-mappings',
+                targets: [
+                    { value: 'btn0', label: 'LED Off' },
+                    { value: 'btn1', label: 'White LED' },
+                    { value: 'btn2', label: 'Blue LED' }
+                ]
+            },
+            {
+                type: 'divider',
+                style: 'original',
+                label: 'Voice & Beep Prompts'
+            },
+            {
+                type: 'toggles',
+                id: 'prompts',
+                items: [
+                    { key: 'p', label: 'Power On/Off Beep' },
+                    { key: 'b', label: 'Bluetooth Pairing Beep' },
+                    { key: 'l', label: 'Low Battery Beep' },
+                    { key: 'm', label: 'Maximum Volume Beep' },
+                    { key: 't', label: 'TWS Pairing Beep' }
+                ]
+            }
         ],
-        prompts: ['p', 'b', 'l', 'm', 't'],
         eq: {
             bandCount: 9,
             customPresetId: CUSTOM_PRESET_ID,
@@ -47,14 +70,17 @@ export const xsoundPlus2Profile = createProfile({
                 { value: 'btn1', label: 'White LED' },
                 { value: 'btn2', label: 'Blue LED' }
             ],
+            // bands: nine values in dB (-8 to +8) matching the Tribit app display
+            // color: hex color matching the Tribit app curve colour for that preset
             presets: [
                 { value: '254', label: 'Custom' },
-                { value: '0', label: 'XBass Off' },
-                { value: '1', label: 'XBass' },
-                { value: '2', label: 'Audiobook' },
-                { value: '3', label: 'MaxSound traditional' },
-                { value: '4', label: 'Rock' },
-                { value: '5', label: 'Jazz' }
+                { value: 'sw:balanced', label: 'Balanced', software: true, color: '#81c784', bands: [1, 0, 1, 2, 2, 0, 1, -2, -6] },
+                { value: '0', label: 'XBass Off',            color: '#e65100', bands: null },
+                { value: '1', label: 'XBass',                color: '#00bcd4', bands: null },
+                { value: '2', label: 'Audiobook',            color: '#ff8a65', bands: null },
+                { value: '3', label: 'MaxSound traditional', color: '#f9e31c', bands: [-6, -3, 0, 0, 0, 0, -3, -5, -5] },
+                { value: '4', label: 'Rock',                 color: '#9c27b0', bands: [0, 0, 0, 0, 0, 0, 3, 4, 4] },
+                { value: '5', label: 'Jazz',                 color: '#a0785a', bands: [4, 0, 4, 4, 0, 0, 0, 0, 0] }
             ]
         }
     },
@@ -81,9 +107,10 @@ export const xsoundPlus2Profile = createProfile({
         return this.buildCommand(0x18, [3, buttonIndex, eqState.id, ...eqState.bands.map((band) => band + 8)]);
     },
     createSettingsCommands(settings) {
+        const promptsFeature = this.capabilities.features.find((f) => f.id === 'prompts');
         return [
             this.buildCommand(0x8C, [parseInt(settings.shutdownMode, 10)]),
-            this.buildCommand(0x90, this.capabilities.prompts.map((prompt) => settings.prompts[prompt] ? 1 : 0))
+            this.buildCommand(0x90, promptsFeature.items.map((p) => settings.prompts[p.key] ? 1 : 0))
         ];
     },
     decodeNotification(value) {

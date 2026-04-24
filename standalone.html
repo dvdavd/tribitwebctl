@@ -21,7 +21,6 @@
     --primary-bright: #fff04a;
     --button-text-dark: #2f3035;
     --accent: #ff8e1a;
-    --success: #94f248;
     --slider-active: #ffe20b;
     --slider-track: #5d5e65;
     --surface-tint: rgba(0, 0, 0, 0.2);
@@ -32,12 +31,15 @@
     --shadow: 0 16px 32px -20px rgba(0, 0, 0, 0.45), 0 10px 24px -18px rgba(0, 0, 0, 0.3);
 }
 
-* { box-sizing: border-box; }
+* { 
+    box-sizing: border-box; 
+    font-weight: 400;
+}
 
 body {
     font-family: system-ui, -apple-system, sans-serif;
     margin: 0;
-    padding: 12px;
+    padding: var(--mobile-inset);
     line-height: 1.5;
     background: var(--bg);
     color: var(--text);
@@ -76,7 +78,6 @@ body {
 h1 {
     margin: 0;
     font-size: 1.25rem;
-    font-weight: 400;
     color: var(--text);
 }
 
@@ -90,7 +91,6 @@ h1 {
     border: 1px solid var(--line);
     color: var(--muted);
     font-size: 0.85rem;
-    font-weight: 600;
     line-height: 1;
 }
 
@@ -104,7 +104,6 @@ h1 {
 
 .battery-value {
     color: var(--text);
-    font-weight: 400;
 }
 
 button {
@@ -115,7 +114,6 @@ button {
     border-radius: 6px;
     cursor: pointer;
     font-size: 0.9rem;
-    font-weight: 600;
     transition: background 0.15s ease;
 }
 
@@ -167,24 +165,87 @@ button:disabled {
     to { transform: rotate(360deg); }
 }
 
-.error-panel {
-    display: none;
-    max-width: 560px;
-    margin: 8vh auto 0;
-    text-align: center;
+#connectCard {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100dvh - 2 * var(--mobile-inset));
 }
 
-.error-panel.active { display: block; }
-
-.error-panel h2 {
-    margin: 0 0 0.75rem;
-    color: var(--text);
-    font-size: 1.2rem;
-}
-
-.error-panel p {
-    margin: 0;
+.diagnostic-link {
+    position: absolute;
+    bottom: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
     color: var(--muted);
+    opacity: 0.45;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.diagnostic-link:hover {
+    opacity: 0.75;
+}
+
+.connect-card {
+    width: 100%;
+    max-width: 360px;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+}
+
+.connect-title {
+    margin: 0;
+    padding: 1rem 1.5rem;
+    text-align: center;
+    font-size: 1.4rem;
+}
+
+.connect-error {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease;
+}
+
+.connect-error.active {
+    grid-template-rows: 1fr;
+}
+
+.connect-error-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+
+.connect-error-content {
+    border-top: 1px solid var(--line);
+    padding: 1rem 1.5rem;
+    background: var(--surface-tint);
+}
+
+.connect-error-content h2 {
+    margin: 0 0 0.35rem;
+    font-size: 0.9rem;
+    color: var(--accent);
+}
+
+.connect-error-content p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.connect-footer {
+    border-top: 1px solid var(--line);
+    padding: 1rem 1.5rem;
+}
+
+.connect-footer .connect-btn {
+    width: 100%;
 }
 
 .controls { display: none; }
@@ -208,7 +269,6 @@ button:disabled {
 .panel-title {
     margin: 0 0 1rem;
     font-size: 0.9rem;
-    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--muted);
@@ -217,7 +277,6 @@ button:disabled {
 label {
     display: block;
     margin-bottom: 0.5rem;
-    font-weight: 600;
     color: var(--muted);
 }
 
@@ -234,7 +293,6 @@ input[type="range"] {
 
 .volume-value {
     font-size: 1.1rem;
-    font-weight: 700;
     color: var(--primary);
     min-width: 3.5rem;
     text-align: right;
@@ -244,7 +302,6 @@ input[type="range"] {
     font-size: 0.8rem;
     margin-left: 0.1rem;
     color: var(--muted);
-    font-weight: 600;
 }
 
 #volume {
@@ -308,76 +365,142 @@ input[type="range"] {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
+#dynamicSettingsContainer {
+    margin-inline: -1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.settings-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-section.alternate {
+    background: var(--surface-tint);
+    border-top: 1px solid var(--line);
+    padding-bottom: 0.5rem;
+}
+
+.setting-divider {
+    padding: 1rem 1.25rem 0.5rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    font-weight: 500;
+}
+
+/* First divider in the card and dividers inside alternate sections share the
+   section's own border-top — suppress the redundant inner border */
+.settings-section:first-child .setting-divider,
+.settings-section.alternate .setting-divider {
+    border-top: none;
+}
+
 .setting-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    padding: 0.35rem 1.25rem;
 }
 
-.setting-row:last-child { margin-bottom: 0; }
-
-.setting-group {
-    background: var(--surface-tint);
-    margin-inline: -1.25rem;
-    padding: 1rem 1.25rem;
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 1.25rem;
+/* Align first row with panel-title: title has 1rem margin-bottom, row has no top gap */
+.settings-section.default:first-child .setting-row:first-child {
+    padding-top: 0;
 }
 
-.setting-group-title {
-    display: block;
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 1rem;
-    letter-spacing: 0.1em;
+.settings-section.default {
+    padding-bottom: 0.5rem;
 }
 
-.setting-group .setting-row {
-    margin-bottom: 0.5rem;
+.setting-row > span {
+    font-size: 0.9rem;
 }
 
-.setting-group .setting-row:last-child {
-    margin-bottom: 0;
-}
-
-.setting-row.prompts {
+.setting-row.toggles {
+    display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
+    align-items: stretch;
+    padding: 0;
 }
 
-.setting-input-wrap { width: 65%; }
+.setting-mapping-grid {
+    display: flex;
+    flex-direction: column;
+}
+
+.setting-input-wrap {
+    width: 65%;
+}
 
 .apply-btn {
     width: 100%;
-    margin-top: 0.5rem;
+    margin-top: 0.75rem;
 }
 
 .prompt-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 0.5rem;
-    width: 100%;
+    padding: 0.35rem 1.25rem;
 }
 
 .prompt-item {
     display: flex;
+    flex-direction: row-reverse;
+    justify-content: space-between;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.85rem;
-    padding: 0.5rem;
-    border-radius: 6px;
-    background: var(--panel-soft);
-    border: 1px solid var(--line);
-    margin-bottom: 0;
+    gap: 1rem;
+    font-size: 0.9rem;
     cursor: pointer;
+    transition: filter 0.15s ease;
+    color: var(--text);
 }
 
-.prompt-item input { margin: 0; }
+.prompt-item:hover {
+    filter: brightness(1.2);
+}
+
+.prompt-item input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    pointer-events: none;
+    width: 44px;
+    height: 24px;
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    outline: none;
+    background: var(--slider-track);
+    border-radius: 999px;
+    transition: background 0.15s ease;
+}
+
+.prompt-item input[type="checkbox"]:checked {
+    background: var(--slider-active);
+}
+
+.prompt-item input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #f2f2ee;
+    left: 3px;
+    transition: left 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.prompt-item input[type="checkbox"]:checked::after {
+    left: 23px;
+}
 
 select,
 input[type="text"] {
@@ -507,7 +630,6 @@ button:disabled .btn-icon {
 
 .eq-value {
     font-size: 0.7rem;
-    font-weight: 700;
     color: var(--primary);
     min-width: 0;
     text-align: center;
@@ -586,10 +708,17 @@ button:disabled .btn-icon {
     box-shadow: 0 0 0 2px rgba(255, 226, 11, 0.25);
 }
 
+.eq-slider.no-data::-webkit-slider-thumb {
+    opacity: 0;
+}
+
+.eq-slider.no-data::-moz-range-thumb {
+    opacity: 0;
+}
+
 .eq-slider-wrapper span {
     font-size: 0.65rem;
     color: var(--muted);
-    font-weight: 600;
 }
 
 .eq-actions {
@@ -667,43 +796,6 @@ button:disabled .btn-icon {
     #eq-card   { order: 2; }
     #settings-card { order: 3; }
 
-    .page-header {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        grid-template-areas:
-            "title meta"
-            "btn btn";
-        gap: 0.75rem 1rem;
-        padding: 1rem 1.25rem;
-        align-items: center;
-    }
-
-    .page-header.is-connected {
-        grid-template-areas: "title meta";
-    }
-
-    .page-header-info {
-        display: contents;
-    }
-
-    #headerTitle {
-        grid-area: title;
-        justify-self: start;
-        text-align: left;
-    }
-
-    #headerMeta {
-        grid-area: meta;
-        justify-self: end;
-        align-self: center;
-    }
-
-    #connectBtn {
-        grid-area: btn;
-        width: 100%;
-        min-width: 0;
-    }
-
     .eq-toolbar { gap: 0.75rem; }
 
     .eq-container {
@@ -713,7 +805,6 @@ button:disabled .btn-icon {
         padding: 1rem 0.5rem;
         overflow-x: auto;
         overflow-y: hidden;
-        -webkit-overflow-scrolling: touch;
     }
 
     .eq-slider-wrapper { flex: 1 0 1.6rem; min-width: 1.7rem; gap: 0.2rem; }
@@ -733,6 +824,19 @@ button:disabled .btn-icon {
     body { padding: 0; }
     .page { gap: 0; }
 
+    #connectCard {
+        padding: var(--mobile-inset);
+        min-height: 100dvh;
+    }
+
+    /* Keep connect card styled as a card even when generic cards are flattened */
+    .connect-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+    }
+
     .card {
         background: transparent;
         border: 0;
@@ -741,8 +845,7 @@ button:disabled .btn-icon {
         padding: 0;
     }
 
-    /* Full-width dividers: target layout + each nested section directly
-       (.layout > * + * is useless here because .v-stack has display:contents) */
+    /* Full-width dividers: target layout + each nested section directly */
     .layout { border-top: 1px solid var(--line); gap: 0; }
     #eq-card, #settings-card { border-top: 1px solid var(--line); }
 
@@ -776,9 +879,14 @@ button:disabled .btn-icon {
     #eq-card .preset-hint,
     #eq-card .eq-container { margin-bottom: 0.75rem; }
 
-    .setting-group {
-        margin-inline: calc(-1 * var(--mobile-inset));
+    .setting-row,
+    .setting-divider,
+    .setting-row.toggles .prompt-grid {
         padding-inline: var(--mobile-inset);
+    }
+
+    #dynamicSettingsContainer {
+        margin-inline: calc(-1 * var(--mobile-inset));
     }
 
     /* height: auto eliminates the ~66px dead space left by the 210px from the 880px block */
@@ -801,27 +909,10 @@ button:disabled .btn-icon {
     }
     .setting-input-wrap { width: 65%; }
 
-    .setting-row.prompts {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-    }
-
-    .setting-row.prompts .setting-input-wrap {
-        width: 100%;
-    }
-
-    .setting-group .setting-row {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-    }
-
     .prompt-grid { grid-template-columns: 1fr 1fr; }
 
     select,
-    input[type="text"] { font-size: 16px; min-height: 44px; line-height: 1.2; }
+    input[type="text"] { font-size: 0.9rem; min-height: 36px; line-height: 1.2; }
 
     .modal-content { border-radius: 0; }
 }
@@ -829,7 +920,28 @@ button:disabled .btn-icon {
 </style>
 </head>
 <body>
-    <div class="page">
+    <div id="connectCard">
+        <a href="#dump" class="diagnostic-link">Diagnostic Mode</a>
+        <div class="connect-card card">
+            <h1 class="connect-title">Tribit Web Control</h1>
+            <div id="errorPanel" class="connect-error">
+                <div class="connect-error-inner">
+                    <div class="connect-error-content">
+                        <h2 id="errorTitle"></h2>
+                        <p id="errorBody"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="connect-footer">
+                <button id="connectBtn" class="connect-btn">
+                    <span class="connect-spinner" aria-hidden="true"></span>
+                    <span id="connectBtnLabel">Connect to Speaker</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" style="display: none">
         <div class="card page-header">
             <div class="page-header-info">
                 <h1 id="headerTitle">Tribit Web Control</h1>
@@ -845,15 +957,6 @@ button:disabled .btn-icon {
                     <span id="batteryHeader" class="battery-value">--%</span>
                 </div>
             </div>
-            <button id="connectBtn" class="connect-btn">
-                <span class="connect-spinner" aria-hidden="true"></span>
-                <span id="connectBtnLabel">Connect to Speaker</span>
-            </button>
-        </div>
-
-        <div id="errorPanel" class="card error-panel">
-            <h2 id="errorTitle">Unable to connect right now</h2>
-            <p id="errorBody">Please make sure the speaker is powered on, nearby, and not already connected to the official app. Sometimes a retry or two is needed to establish a stable link.</p>
         </div>
 
         <div class="layout">
@@ -868,48 +971,8 @@ button:disabled .btn-icon {
 
                 <div id="settings-card" class="card controls">
                     <h2 class="panel-title">Device Options</h2>
-                    <div class="setting-row">
-                        <span>Auto Off</span>
-                        <div class="setting-input-wrap">
-                            <select id="shutdownSelect">
-                                <option value="0">Never</option>
-                                <option value="1">15 Minutes</option>
-                                <option value="2">30 Minutes</option>
-                                <option value="3">45 Minutes</option>
-                                <option value="4">60 Minutes</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="setting-group">
-                        <span class="setting-group-title">EQ Button Mappings</span>
-                        <div class="setting-row">
-                            <span>LED Off</span>
-                            <div class="setting-input-wrap">
-                                <select id="btn0Select"></select>
-                            </div>
-                        </div>
-                        <div class="setting-row">
-                            <span>White</span>
-                            <div class="setting-input-wrap">
-                                <select id="btn1Select"></select>
-                            </div>
-                        </div>
-                        <div class="setting-row">
-                            <span>Blue</span>
-                            <div class="setting-input-wrap">
-                                <select id="btn2Select"></select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="setting-row prompts">
-                        <span>Voice & Beep Prompts</span>
-                        <div class="prompt-grid">
-                            <label class="prompt-item"><input type="checkbox" id="prompt-p"> Power</label>
-                            <label class="prompt-item"><input type="checkbox" id="prompt-b"> BT Pair</label>
-                            <label class="prompt-item"><input type="checkbox" id="prompt-l"> Low Batt</label>
-                            <label class="prompt-item"><input type="checkbox" id="prompt-m"> Max Vol</label>
-                            <label class="prompt-item"><input type="checkbox" id="prompt-t"> TWS</label>
-                        </div>
+                    <div id="dynamicSettingsContainer" class="v-stack">
+                        <!-- Dynamically generated by UI based on profile features -->
                     </div>
                     <button id="applySettingsBtn" class="secondary-btn apply-btn">Apply Settings</button>
                 </div>
@@ -933,6 +996,9 @@ button:disabled .btn-icon {
                                 </select>
                                 <button id="saveCustomPresetBtn" class="secondary-btn icon-btn" title="Save local preset">
                                     <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTUgMjFxLS44MjUgMC0xLjQxMi0uNTg3VDMgMTlWNXEwLS44MjUuNTg4LTEuNDEyVDUgM2gxMmw0IDR2NS4zcS0uNDc1LS4yLS45ODctLjI2MlQxOSAxMi4wNVY3LjgyNUwxNi4xNzUgNUg1djE0aDZ2MnpNNSA1djE0em04IDE4di0zLjA3NWw1LjUyNS01LjVxLjIyNS0uMjI1LjUtLjMyNXQuNTUtLjFxLjMgMCAuNTc1LjExM3QuNS4zMzdsLjkyNS45MjVxLjIuMjI1LjMxMy41dC4xMTIuNTV0LS4xLjU2M3QtLjMyNS41MTJsLTUuNSA1LjV6bTcuNS02LjU3NWwtLjkyNS0uOTI1em0tNiA1LjA3NWguOTVsMy4wMjUtMy4wNWwtLjQ1LS40NzVsLS40NzUtLjQ1bC0zLjA1IDMuMDI1em0zLjUyNS0zLjUyNWwtLjQ3NS0uNDVsLjkyNS45MjV6TTYgMTBoOVY2SDZ6bTYgOGguMWwyLjktMi44NzVWMTVxMC0xLjI1LS44NzUtMi4xMjVUMTIgMTJ0LTIuMTI1Ljg3NVQ5IDE1dC44NzUgMi4xMjVUMTIgMTgiLz48L3N2Zz4=" alt="Save" class="btn-icon">
+                                </button>
+                                <button id="renameCustomPresetBtn" class="secondary-btn icon-btn" title="Rename preset" disabled>
+                                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTE4LjQxIDUuOEwxNy4yIDQuNTljLS43OC0uNzgtMi4wNS0uNzgtMi44MyAwbC0yLjY4IDIuNjhMMyAxNS45NlYyMGg0LjA0bDguNzQtOC43NGwyLjYzLTIuNjNjLjc5LS43OC43OS0yLjA1IDAtMi44M002LjIxIDE4SDV2LTEuMjFsOC42Ni04LjY2bDEuMjEgMS4yMXpNMTEgMjBsNC00aDZ2NHoiLz48L3N2Zz4=" alt="Rename" class="btn-icon">
                                 </button>
                                 <button id="deleteCustomPresetBtn" class="secondary-btn icon-btn" title="Delete local preset" disabled>
                                     <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTcgMjFxLS44MjUgMC0xLjQxMi0uNTg3VDUgMTlWNkg0VjRoNVYzaDZ2MWg1djJoLTF2MTNxMCAuODI1LS41ODcgMS40MTNUMTcgMjF6TTE3IDZIN3YxM2gxMHpNOSAxN2gyVjhIOXptNCAwaDJWOGgtMnpNNyA2djEzeiIvPjwvc3ZnPg==" alt="Delete" class="btn-icon">
@@ -988,8 +1054,32 @@ button:disabled .btn-icon {
             <button id="browserModalClose" class="modal-close-btn">Close</button>
         </div>
     </div>
+    <div id="diagnosticView" class="modal" style="display: none; z-index: 100;">
+        <div class="modal-content">
+            <h2>Diagnostic Mode</h2>
+            <p>Connect any Tribit speaker to generate a diagnostic report. This allows us to support new models.</p>
+            <div id="diagnosticStatus" style="margin: 20px 0; font-family: monospace; font-size: 0.9em; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; min-height: 100px; white-space: pre-wrap; max-height: 200px; overflow-y: auto;">
+                Waiting for connection...
+            </div>
+            <div id="diagnosticProgressWrap" style="display: none; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin: 10px 0; overflow: hidden;">
+                <div id="diagnosticProgressBar" style="width: 0%; height: 100%; background: #007bff; transition: width 1s linear;"></div>
+            </div>
+            <div id="diagnosticControls" style="display: none; margin-bottom: 10px;">
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="diagnosticHexInput" placeholder="Raw Hex (e.g. 02 01)" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--card-border); background: var(--card-bg); color: white;">
+                    <button id="diagnosticSendBtn" class="secondary-btn" style="padding: 0 15px;">Send</button>
+                </div>
+                <p style="font-size: 0.8em; color: var(--text-dim); margin-top: 5px;">Type hex bytes and click Send to test write commands.</p>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button id="diagnosticConnectBtn" class="connect-btn" style="flex: 1; margin-top: 0;">Connect & Dump</button>
+                <button id="diagnosticCloseBtn" class="secondary-btn" style="flex: 1; margin-top: 0;">Exit</button>
+            </div>
+        </div>
+    </div>
     <script>
-(()=>{function _({log:t,onDisconnected:e,onNotification:r}){let a=null,c=null;async function d(y,g=[]){return navigator.bluetooth.requestDevice({filters:y,optionalServices:g})}async function s(y,g){c=y;let I=await y.gatt.connect(),k=await I.getPrimaryService(g.uuids.service),N=await k.getCharacteristic(g.uuids.command);return a=await k.getCharacteristic(g.uuids.response),await a.startNotifications(),a.addEventListener("characteristicvaluechanged",o),y.addEventListener("gattserverdisconnected",f),{device:y,server:I,commandCharacteristic:N}}function o(y){r(new Uint8Array(y.target.value.buffer))}function f(){t("Bluetooth device disconnected","info"),a&&(a.removeEventListener("characteristicvaluechanged",o),a=null),c=null,e()}async function w(y,g){await y.writeValueWithoutResponse(g)}async function L(y){let g=y?.device||c;g?.gatt?.connected&&g.gatt.disconnect()}return{requestDevice:d,connect:s,disconnect:L,write:w}}function l(t){return document.getElementById(t)}function H(){let t=Array.from(document.querySelectorAll(".eq-slider")),e=Array.from(document.querySelectorAll(".eq-slider-wrapper")),r={p:l("prompt-p"),b:l("prompt-b"),l:l("prompt-l"),m:l("prompt-m"),t:l("prompt-t")};return{pageHeader:document.querySelector(".page-header"),headerTitle:l("headerTitle"),headerMeta:l("headerMeta"),controls:Array.from(document.querySelectorAll(".controls")),batteryIcon:l("batteryIcon"),batteryHeader:l("batteryHeader"),connectBtn:l("connectBtn"),connectBtnLabel:l("connectBtnLabel"),errorPanel:l("errorPanel"),errorTitle:l("errorTitle"),errorBody:l("errorBody"),volume:l("volume"),volLabel:l("volLabel"),shutdownSelect:l("shutdownSelect"),btn0Select:l("btn0Select"),btn1Select:l("btn1Select"),btn2Select:l("btn2Select"),promptCheckboxes:r,applySettingsBtn:l("applySettingsBtn"),eqPreset:l("eqPreset"),saveCustomPresetBtn:l("saveCustomPresetBtn"),deleteCustomPresetBtn:l("deleteCustomPresetBtn"),eqContainer:l("eqContainer"),eqCurveLayer:l("eqCurveLayer"),eqCurveFill:l("eqCurveFill"),eqCurveGlow:l("eqCurveGlow"),eqCurvePath:l("eqCurvePath"),eqSliders:t,eqSliderWrappers:e,activateEqBtn:l("activateEqBtn"),flattenEqBtn:l("flattenEqBtn"),browserModal:l("browserModal"),browserModalClose:l("browserModalClose")}}function W(t){return typeof t=="string"&&t.startsWith("custom:")}function qe(t,e){return t.map(r=>parseInt(r,10)).slice(0,e)}function z({storageKey:t,bandCount:e,log:r}){let a=c();function c(){try{let s=localStorage.getItem(t);if(!s)return[];let o=JSON.parse(s);return Array.isArray(o)?o.filter(f=>f&&W(f.id)&&typeof f.name=="string"&&Array.isArray(f.bands)&&f.bands.length===e).map(f=>({id:f.id,name:f.name.trim(),bands:qe(f.bands,e)})).filter(f=>f.name):[]}catch(s){return r(`Failed to load custom presets: ${s.message}`,"err"),[]}}function d(){localStorage.setItem(t,JSON.stringify(a))}return{isCustomPresetValue:W,getAll(){return a.slice()},createId(){return`custom:${Date.now()}:${Math.random().toString(16).slice(2,8)}`},getById(s){return a.find(o=>o.id===s)||null},getByName(s){return a.find(o=>o.name===s)||null},findByBands(s){return a.find(o=>o.bands.length===e&&s.length===e&&o.bands.every((f,w)=>f===s[w]))||null},save(s){let o=a.findIndex(f=>f.id===s.id);o>=0?a[o]=s:a.push(s),a.sort((f,w)=>f.name.localeCompare(w.name)),d()},remove(s){a=a.filter(o=>o.id!==s),d()}}}function G(t,e){return{id:e,bands:new Array(t).fill(0)}}function j(t){let e=Object.fromEntries(t.capabilities.eq.targets.map(r=>[r.value,G(t.capabilities.eq.bandCount,t.capabilities.eq.customPresetId)]));return{connection:{device:null,server:null,commandCharacteristic:null,connected:!1},customEqPresets:[],eqSlots:e,ui:{}}}function E(t,e){let r=e?.capabilities?.eq?.liveTarget||"active";return t.eqSlots[r]}function K(t,e){t.eqSlots=Object.fromEntries(e.capabilities.eq.targets.map(r=>[r.value,G(e.capabilities.eq.bandCount,e.capabilities.eq.customPresetId)]))}function X(t,e){let r=parseInt(t.min,10),a=parseInt(t.max,10),c=(e-r)/(a-r)*100;t.style.setProperty("--slider-fill",`${c}%`)}function Ce(t){return`${t>=0?"+":""}${t}`}function Ee(t){if(t.length===0)return"";if(t.length===1)return`M ${t[0].x} ${t[0].y}`;let e=`M ${t[0].x} ${t[0].y}`;for(let r=0;r<t.length-1;r+=1){let a=t[r-1]||t[r],c=t[r],d=t[r+1],s=t[r+2]||d,o={x:c.x+(d.x-a.x)/6,y:c.y+(d.y-a.y)/6},f={x:d.x-(s.x-c.x)/6,y:d.y-(s.y-c.y)/6};e+=` C ${o.x} ${o.y}, ${f.x} ${f.y}, ${d.x} ${d.y}`}return e}function Y({appTitle:t,dom:e,getProfile:r,state:a,presets:c}){function d(){if(!e.eqCurvePath||!e.eqCurveGlow||!e.eqCurveFill||!e.eqContainer||e.eqSliderWrappers.length===0)return;let n=e.eqContainer.getBoundingClientRect();if(n.width===0||n.height===0)return;e.eqCurveLayer.setAttribute("viewBox",`0 0 ${n.width} ${n.height}`);let i=20,b=e.eqSliderWrappers.map((ze,$)=>{let T=e.eqSliders[$].getBoundingClientRect(),he=parseInt(e.eqSliders[$].value,10),R=parseInt(e.eqSliders[$].min,10),ye=parseInt(e.eqSliders[$].max,10),ge=(he-R)/(ye-R),Se=Math.max(T.height-i,1);return{x:T.left-n.left+T.width/2,y:T.top-n.top+i/2+(1-ge)*Se}}),S=e.eqSliders[0].getBoundingClientRect(),C=S.top-n.top+i/2,M=C+Math.max(S.height-i,1),P=e.eqCurveLayer.querySelector("#eqCurveFillGradient");P&&(P.setAttribute("y1",String(M)),P.setAttribute("y2",String(C)));let x=Ee(b),ve=`${x} L ${b[b.length-1].x} ${n.height} L ${b[0].x} ${n.height} Z`;e.eqCurveFill.setAttribute("d",ve),e.eqCurvePath.setAttribute("d",x),e.eqCurveGlow.setAttribute("d",x)}function s(){if(typeof ResizeObserver<"u"){let n=new ResizeObserver(()=>d());n.observe(e.eqContainer),e.eqSliderWrappers.forEach(i=>n.observe(i))}else window.addEventListener("resize",d)}s();function o(){return r()}function f(){let n=[...o().capabilities.eq.presets,...c.getAll().map(i=>({value:i.id,label:i.name}))];[e.btn0Select,e.btn1Select,e.btn2Select].forEach((i,b)=>{let S=i.value;i.innerHTML="",n.forEach(P=>{let x=document.createElement("option");x.value=P.value,x.textContent=P.label,i.append(x)});let C=a.eqSlots[`btn${b}`],M=C.id!==o().capabilities.eq.customPresetId?String(C.id):c.findByBands(C.bands)?.id||String(o().capabilities.eq.customPresetId);i.value=n.some(P=>P.value===M)?M:n[0].value})}function w(){e.shutdownSelect.innerHTML="",o().capabilities.shutdownOptions.forEach(n=>{let i=document.createElement("option");i.value=n.value,i.textContent=n.label,e.shutdownSelect.append(i)})}function L(n=null){let i=o().getBatteryIconKey(n),b=Number.isFinite(n);e.batteryHeader.textContent=b?`${n}%`:"--%",e.batteryIcon.src=o().batteryIcons[i],e.batteryIcon.alt=b?`Battery level ${n}%`:"Battery level unknown"}function y(n){e.volLabel.textContent=n,e.volume.value=n,X(e.volume,n)}function g(n,i="Connect to Speaker"){e.connectBtnLabel.textContent=i,e.connectBtn.disabled=n,e.connectBtn.classList.toggle("is-loading",n)}function I(n){e.controls.forEach(i=>i.classList.toggle("active",n)),e.headerMeta.classList.toggle("active",n)}function k(n,i){e.errorTitle.textContent=n,e.errorBody.textContent=i,e.errorPanel.classList.add("active")}function N(){e.errorPanel.classList.remove("active")}function oe(){e.browserModal.style.display="flex"}function se(){e.browserModal.style.display="none"}function ce(n){let i=[...o().capabilities.eq.presets,...c.getAll().map(b=>({value:b.id,label:b.name}))];e.eqPreset.innerHTML="",i.forEach(b=>{let S=document.createElement("option");S.value=b.value,S.textContent=b.label,e.eqPreset.append(S)}),e.eqPreset.value=i.some(b=>b.value===n)?n:String(o().capabilities.eq.customPresetId)}function V(){let n=E(a,o()),i=e.eqPreset.value;e.saveCustomPresetBtn.disabled=n.id!==o().capabilities.eq.customPresetId,e.deleteCustomPresetBtn.disabled=!c.isCustomPresetValue(i)}function le(n){e.eqSliders.forEach((i,b)=>{let S=n.bands[b];i.value=S,i.disabled=n.id!==o().capabilities.eq.customPresetId,X(i,S);let C=document.getElementById(`bandValue${b}`);C&&(C.textContent=Ce(S))}),e.eqContainer.style.opacity=n.id!==o().capabilities.eq.customPresetId?"0.5":"1",d()}function ue(n){n.shutdownMode!=null&&(e.shutdownSelect.value=String(n.shutdownMode)),n.prompts&&Object.entries(n.prompts).forEach(([i,b])=>{e.promptCheckboxes[i]&&(e.promptCheckboxes[i].checked=b)})}function A(){let n=E(a,o()),i=n.id!==o().capabilities.eq.customPresetId?String(n.id):c.findByBands(n.bands)?.id||String(o().capabilities.eq.customPresetId);ce(i),le(n),V()}function F(n){e.headerTitle.textContent=n||t}function de(n){F(n),e.pageHeader.classList.add("is-connected"),e.connectBtn.style.display="none",I(!0),f()}function fe(){F(t),e.pageHeader.classList.remove("is-connected"),e.connectBtn.style.display="",g(!1)}function pe(){A(),f()}function me(){F(t),e.pageHeader.classList.remove("is-connected"),f(),w(),L(),y(parseInt(e.volume.value,10)),A()}function be(n){if([e.btn0Select,e.btn1Select,e.btn2Select,e.eqPreset,e.activateEqBtn,e.flattenEqBtn,e.saveCustomPresetBtn,e.deleteCustomPresetBtn].forEach(i=>{i.disabled=n}),n){e.eqSliders.forEach(i=>{i.disabled=!0}),e.eqContainer.style.opacity="0.5";return}A()}return{hideBrowserModal:se,hideErrorPanel:N,renderConnectedState:de,renderDisconnectedState:fe,renderEqSection:A,renderInitial:me,renderSettings:ue,setConnectLoading:g,setControlsVisible:I,setEqInputsDisabled:be,showBrowserModal:oe,showErrorPanel:k,syncActiveTargetSelection:pe,updateBatteryStatus:L,updateCustomPresetControls:V,updateVolumeSlider:y}}function J(t,e,r=[]){let a=10+r.length,c=[8,238,0,0,0,t,e,a&255,a>>8&255,...r],d=c.reduce((s,o)=>s+o&255,0);return new Uint8Array([...c,d])}function Q(t){let e=t instanceof Uint8Array?t:new Uint8Array(t.buffer);return e.length<10?null:{command:e[6],payload:e.slice(9,-1)}}var Pe=[[100,"full"],[84,"level6"],[67,"level5"],[50,"level4"],[34,"level3"],[17,"level2"],[0,"level1"]],we={getDeviceDisplayName(t){return t?.name||"Unknown speaker"},getFriendlyConnectError(t){return!t||t.name==="NotFoundError"||t.message==="User cancelled the requestDevice() chooser."?null:t.name==="NotAllowedError"?{title:"Bluetooth access was blocked",message:"Please allow Bluetooth access in your browser and try connecting again."}:t.name==="NetworkError"||t.name==="InvalidStateError"?{title:"The speaker did not finish connecting",message:"Please check that the speaker is on, nearby, and not currently connected to the official app. A quick retry often helps."}:{title:"Unable to connect right now",message:"Please make sure the speaker is powered on, nearby, and not already connected to the official app. Sometimes a retry or two is needed to establish a stable link."}},getBatteryIconKey(t){if(!Number.isFinite(t))return"unknown";for(let[e,r]of Pe)if(t>=e)return r;return"level1"}};function O(t){return{...we,...t}}var xe=1,U=254,Be={unknown:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTEgMThWNmgxNi4wMjVxLS41LjQtLjg3NS45VDE1LjUyNSA4SDN2OGgxNC4wNXEuMS42MjUuNDUgMS4xMzh0Ljg1Ljg2MnptMTguMjg4LTEuNzg3UTE5IDE1LjkyNCAxOSAxNS41dC4yODgtLjcxMlQyMCAxNC41dC43MTMuMjg4dC4yODcuNzEydC0uMjg4LjcxM1QyMCAxNi41dC0uNzEyLS4yODhtLjAxMi0yLjczN3EwLS40LjAxMy0uNzYydC4xNjItLjcxM3EuMTc1LS4zNS40NjMtLjYxMnQuNTYyLS41MzhxLjMtLjI3NS41NS0uNjEydC4yNS0uNzYzcTAtLjUtLjM4Ny0uOHQtLjkxMy0uM3EtLjUgMC0uODg4LjMyNXQtLjUzNy44MjVMMTcuMyA5cS4yNS0uOSAxLTEuNDVUMjAgN3ExLjEgMCAxLjkxMy42ODh0LjgxMiAxLjczN3EwIC41NzUtLjI4OCAxLjA3NXQtLjcxMi45MjVxLS4yNS4yNS0uNDg4LjQ3NXQtLjM4Ny41NXEtLjE3NS4zNS0uMTI1IDEuMDI1ek00IDE1VjloMTEuNTI1djZ6Ii8+PC9zdmc+",level1:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTEgMThWNmgxOS41djEyem0yLTJoMTUuNVY4SDN6bTE4LjUtMS41di01SDIzdjV6TTQgMTVWOWgydjZ6Ii8+PC9zdmc+",level2:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWg0djZ6bS0zIDNWNmgxOS41djEyem0yLTJoMTUuNVY4SDN6bTE4LjUtMS41di01SDIzdjV6Ii8+PC9zdmc+",level3:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWg2djZ6bS0zIDNWNmgxOS41djEyem0yLTJoMTUuNVY4SDN6bTE4LjUtMS41di01SDIzdjV6Ii8+PC9zdmc+",level4:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWg4djZ6bS0zIDNWNmgxOS41djEyem0yLTJoMTUuNVY4SDN6bTE4LjUtMS41di01SDIzdjV6Ii8+PC9zdmc+",level5:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWgxMHY2em0tMyAzVjZoMTkuNXYxMnptMi0yaDE1LjVWOEgzem0xOC41LTEuNXYtNUgyM3Y1eiIvPjwvc3ZnPg==",level6:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWgxMnY2em0tMyAzVjZoMTkuNXYxMnptMi0yaDE1LjVWOEgzem0xOC41LTEuNXYtNUgyM3Y1eiIvPjwvc3ZnPg==",full:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWgxMy41djZ6bS0zIDNWNmgxOS41djEyem0yLTJoMTUuNVY4SDN6bTE4LjUtMS41di01SDIzdjV6Ii8+PC9zdmc+"};function Z(t,e,r){return Array.from(t.slice(e,e+r)).map(a=>a-8)}var ee=O({id:"xsound-plus-2",bluetoothFilters:[{namePrefix:"LE_Tribit"}],uuids:{service:"21963523-0000-1000-8000-00805f9b34fb",command:"00007777-0000-1000-8000-00805f9b34fb",response:"00008888-0000-1000-8000-00805f9b34fb"},batteryIcons:Be,capabilities:{shutdownOptions:[{value:"0",label:"Never"},{value:"1",label:"15 Minutes"},{value:"2",label:"30 Minutes"},{value:"3",label:"45 Minutes"},{value:"4",label:"60 Minutes"}],prompts:["p","b","l","m","t"],eq:{bandCount:9,customPresetId:U,liveTarget:"active",targets:[{value:"active",label:"Current Settings"},{value:"btn0",label:"LED Off"},{value:"btn1",label:"White LED"},{value:"btn2",label:"Blue LED"}],presets:[{value:"254",label:"Custom"},{value:"0",label:"XBass Off"},{value:"1",label:"XBass"},{value:"2",label:"Audiobook"},{value:"3",label:"MaxSound traditional"},{value:"4",label:"Rock"},{value:"5",label:"Jazz"}]}},matchesDevice(t){return t?.name==="LE_Tribit XSound Plus 2"},getDeviceDisplayName(t){return(t?.name||"Tribit speaker").replace(/^LE_/,"")},buildCommand(t,e=[]){return J(xe,t,e)},getInitialSyncCommands(){return[2,9,17,145,5,25]},createVolumeCommand(t){return this.buildCommand(136,[Math.round(t*31/100)])},createApplyEqCommand(t){return this.buildCommand(130,[t.id,...t.bands.map(e=>e+8)])},createSaveEqCommand(t,e){let r=parseInt(t.replace("btn",""),10);return this.buildCommand(24,[3,r,e.id,...e.bands.map(a=>a+8)])},createSettingsCommands(t){return[this.buildCommand(140,[parseInt(t.shutdownMode,10)]),this.buildCommand(144,this.capabilities.prompts.map(e=>t.prompts[e]?1:0))]},decodeNotification(t){let e=Q(t);if(!e)return null;switch(e.command){case 2:return{batteryPercentage:e.payload[0]};case 9:return{volumePercent:Math.round(e.payload[0]*100/31)};case 5:return e.payload.length>=10?{eqUpdates:[{target:"active",id:e.payload[0],bands:e.payload[0]===U?Z(e.payload,1,9):null}]}:null;case 25:return e.payload.length>=12?{eqUpdates:[{target:`btn${e.payload[1]}`,id:e.payload[2],bands:e.payload[2]===U?Z(e.payload,3,9):null}]}:null;case 17:return e.payload.length>=3?{shutdownMode:String(e.payload[2])}:null;case 145:return e.payload.length>=5?{prompts:{p:!!e.payload[0],b:!!e.payload[1],l:!!e.payload[2],m:!!e.payload[3],t:!!e.payload[4]}}:null;default:return null}}});var D=[ee];function te(){return D[0]}function ne(){return D.flatMap(t=>t.bluetoothFilters||[])}function re(){return Array.from(new Set(D.map(t=>t.uuids?.service).filter(Boolean)))}function ae(t){return D.find(e=>e.matchesDevice?.(t))||null}var Ie="Tribit Web Control",Le="tribit.customEqPresets.v1",u=te();function q(t,e=""){let r=e?`[${e.toUpperCase()}] `:"";console.log(`${r}${t}`)}async function ke(){if("serviceWorker"in navigator)try{await navigator.serviceWorker.register("./sw.js"),q("Service worker registered")}catch(t){q(`Service worker registration failed: ${t.message}`,"err")}}var v=H(),p=j(u),h=z({storageKey:Le,bandCount:u.capabilities.eq.bandCount,log:q});p.customEqPresets=h.getAll();var m=Y({appTitle:Ie,dom:v,getProfile:()=>u,state:p,presets:h}),B=_({log:q,onDisconnected:Te,onNotification:$e});function ie(){p.customEqPresets=h.getAll()}function Ae(t){return t.id!==u.capabilities.eq.customPresetId?String(t.id):h.findByBands(t.bands)?.id||String(u.capabilities.eq.customPresetId)}function Me(t){t&&(Number.isFinite(t.batteryPercentage)&&m.updateBatteryStatus(t.batteryPercentage),Number.isFinite(t.volumePercent)&&m.updateVolumeSlider(t.volumePercent),(t.shutdownMode!=null||t.prompts)&&m.renderSettings(t),Array.isArray(t.eqUpdates)&&t.eqUpdates.length>0&&(t.eqUpdates.forEach(e=>{let r=p.eqSlots[e.target];r&&(r.id=e.id,e.bands&&(r.bands=e.bands.slice()))}),m.syncActiveTargetSelection()))}function $e(t){Me(u.decodeNotification(t,p))}function Te(){p.connection.connected=!1,p.connection.device=null,p.connection.commandCharacteristic=null,p.connection.server=null,m.renderDisconnectedState(),m.setControlsVisible(!1)}async function De(){m.setEqInputsDisabled(!0),q("Syncing initial state...");for(let t of u.getInitialSyncCommands())await B.write(p.connection.commandCharacteristic,u.buildCommand(t)),await new Promise(e=>setTimeout(e,250));m.setEqInputsDisabled(!1),m.renderEqSection()}async function Ne(){if(!navigator.bluetooth){m.showBrowserModal();return}m.hideErrorPanel(),m.setConnectLoading(!0,"Connecting...");try{let t=await B.requestDevice(ne(),re()),e=ae(t);if(!e)throw new Error(`Unsupported speaker selected: ${t.name||"Unknown device"}`);e!==u&&(u=e,K(p,u),p.customEqPresets=h.getAll());let r=await B.connect(t,u);p.connection={...p.connection,...r,connected:!0},m.renderConnectedState(u.getDeviceDisplayName(r.device)),await De()}catch(t){q(t.message,"err");let e=u.getFriendlyConnectError(t);e&&m.showErrorPanel(e.title,e.message),m.setConnectLoading(!1)}}async function Fe(){if(!p.connection.commandCharacteristic)return;let t={shutdownMode:v.shutdownSelect.value,prompts:Object.fromEntries(u.capabilities.prompts.map(a=>[a,!!v.promptCheckboxes[a].checked]))},e=u.createSettingsCommands(t),r=[v.btn0Select,v.btn1Select,v.btn2Select];for(let a=0;a<r.length;a++){let c=r[a].value,d,s;if(h.isCustomPresetValue(c)){let o=h.getById(c);d=u.capabilities.eq.customPresetId,s=o.bands}else d=parseInt(c,10),s=new Array(u.capabilities.eq.bandCount).fill(0);e.push(u.createSaveEqCommand(`btn${a}`,{id:d,bands:s}))}for(let[a,c]of e.entries())await B.write(p.connection.commandCharacteristic,c),a<e.length-1&&await new Promise(d=>setTimeout(d,200));q("TX: Settings applied","tx")}async function Oe(){p.connection.commandCharacteristic&&(await B.write(p.connection.commandCharacteristic,u.createApplyEqCommand(E(p,u))),q("TX: Applied to Live Sound","tx"))}function Ue(){let t=E(p,u);t.id=u.capabilities.eq.customPresetId,t.bands.fill(0),m.renderEqSection(),q("UI: Flattened active curve to 0dB")}function Ve(t){let e=E(p,u),r=parseInt(t.target.dataset.band,10),a=parseInt(t.target.value,10);e.bands[r]=a,e.id===u.capabilities.eq.customPresetId&&(v.eqPreset.value=Ae(e)),m.renderEqSection()}function Re(t){let e=E(p,u),r=t.target.value;if(h.isCustomPresetValue(r)){let a=h.getById(r);if(!a){m.renderEqSection();return}e.id=u.capabilities.eq.customPresetId,e.bands=a.bands.slice()}else e.id=parseInt(r,10);m.renderEqSection()}function _e(){let t=E(p,u);if(t.id!==u.capabilities.eq.customPresetId){window.alert("Switch to a custom EQ curve before saving a custom preset.");return}let e=h.findByBands(t.bands),r=e?e.name:"",a=window.prompt("Name this custom preset:",r);if(a===null)return;let c=a.trim();if(!c){window.alert("Preset name cannot be empty.");return}let d=h.getByName(c),s=e?e.id:h.createId();if(d&&d.id!==s){if(!window.confirm(`Overwrite the existing preset "${c}"?`))return;s=d.id,e&&e.id!==s&&h.remove(e.id)}h.save({id:s,name:c,bands:t.bands.slice()}),ie(),v.eqPreset.value=s,m.syncActiveTargetSelection(),q(`UI: Saved custom preset "${c}"`)}function He(){let t=h.getById(v.eqPreset.value);!t||!window.confirm(`Delete custom preset "${t.name}"?`)||(h.remove(t.id),ie(),m.syncActiveTargetSelection(),q(`UI: Deleted custom preset "${t.name}"`))}function We(){v.connectBtn.addEventListener("click",Ne),v.browserModalClose.addEventListener("click",m.hideBrowserModal),v.flattenEqBtn.addEventListener("click",Ue),v.activateEqBtn.addEventListener("click",Oe),v.applySettingsBtn.addEventListener("click",Fe),v.volume.addEventListener("input",t=>{m.updateVolumeSlider(parseInt(t.target.value,10))}),v.volume.addEventListener("change",async t=>{p.connection.commandCharacteristic&&await B.write(p.connection.commandCharacteristic,u.createVolumeCommand(parseInt(t.target.value,10)))}),v.eqSliders.forEach(t=>{t.addEventListener("input",Ve)}),v.eqPreset.addEventListener("change",Re),v.saveCustomPresetBtn.addEventListener("click",_e),v.deleteCustomPresetBtn.addEventListener("click",He),window.addEventListener("beforeunload",()=>{B.disconnect(p.connection)})}ke();m.renderInitial();m.setControlsVisible(!1);We();})();
+(()=>{function ie({log:t,onDisconnected:e,onNotification:a}){let s=null,c=null;async function o(m,B=[]){return navigator.bluetooth.requestDevice({filters:m,optionalServices:B})}async function b(m,B){c=m;let R=await m.gatt.connect(),O=await R.getPrimaryService(B.uuids.service),V=null;if(B.uuids.command)try{V=await O.getCharacteristic(B.uuids.command)}catch(F){t(`Command characteristic not found: ${F.message}`,"warn")}if(B.uuids.response)try{s=await O.getCharacteristic(B.uuids.response),await s.startNotifications(),s.addEventListener("characteristicvaluechanged",d)}catch(F){t(`Response characteristic not found: ${F.message}`,"warn")}return m.addEventListener("gattserverdisconnected",f),{device:m,server:R,commandCharacteristic:V}}function d(m){a(new Uint8Array(m.target.value.buffer))}function f(){t("Bluetooth device disconnected","info"),s&&(s.removeEventListener("characteristicvaluechanged",d),s=null),c=null,e()}async function E(m,B){await m.writeValueWithoutResponse(B)}async function N(m){let B=m?.device||c;B?.gatt?.connected&&B.gatt.disconnect()}async function M(m){if(!m?.gatt?.connected)return null;let B={deviceName:m.name,id:m.id,services:[]},R=await m.gatt.getPrimaryServices();for(let O of R){let V={uuid:O.uuid,characteristics:[]},F=await O.getCharacteristics();for(let k of F){let W={uuid:k.uuid,properties:{read:k.properties.read,write:k.properties.write,writeWithoutResponse:k.properties.writeWithoutResponse,notify:k.properties.notify,indicate:k.properties.indicate}};if(k.properties.read)try{let j=await k.readValue();W.valueHex=Array.from(new Uint8Array(j.buffer)).map(Z=>Z.toString(16).padStart(2,"0")).join(" ")}catch(j){W.readError=j.message}V.characteristics.push(W)}B.services.push(V)}return B}return{requestDevice:o,connect:b,disconnect:N,write:E,dumpDeviceInfo:M}}function v(t){return document.getElementById(t)}function re(){let t=Array.from(document.querySelectorAll(".eq-slider")),e=Array.from(document.querySelectorAll(".eq-slider-wrapper"));return{connectCard:v("connectCard"),page:document.querySelector(".page"),pageHeader:document.querySelector(".page-header"),headerTitle:v("headerTitle"),headerMeta:v("headerMeta"),controls:Array.from(document.querySelectorAll(".controls")),batteryIcon:v("batteryIcon"),batteryHeader:v("batteryHeader"),connectBtn:v("connectBtn"),connectBtnLabel:v("connectBtnLabel"),errorPanel:v("errorPanel"),errorTitle:v("errorTitle"),errorBody:v("errorBody"),volume:v("volume"),volLabel:v("volLabel"),dynamicSettingsContainer:v("dynamicSettingsContainer"),dynamicInputs:{},applySettingsBtn:v("applySettingsBtn"),eqPreset:v("eqPreset"),saveCustomPresetBtn:v("saveCustomPresetBtn"),renameCustomPresetBtn:v("renameCustomPresetBtn"),deleteCustomPresetBtn:v("deleteCustomPresetBtn"),eqContainer:v("eqContainer"),eqCurveLayer:v("eqCurveLayer"),eqCurveFill:v("eqCurveFill"),eqCurveGlow:v("eqCurveGlow"),eqCurvePath:v("eqCurvePath"),eqSliders:t,eqSliderWrappers:e,activateEqBtn:v("activateEqBtn"),flattenEqBtn:v("flattenEqBtn"),browserModal:v("browserModal"),browserModalClose:v("browserModalClose"),diagnosticView:v("diagnosticView"),diagnosticStatus:v("diagnosticStatus"),diagnosticProgressWrap:v("diagnosticProgressWrap"),diagnosticProgressBar:v("diagnosticProgressBar"),diagnosticControls:v("diagnosticControls"),diagnosticHexInput:v("diagnosticHexInput"),diagnosticSendBtn:v("diagnosticSendBtn"),diagnosticConnectBtn:v("diagnosticConnectBtn"),diagnosticCloseBtn:v("diagnosticCloseBtn")}}function oe(t){return typeof t=="string"&&t.startsWith("custom:")}function Ve(t,e){return t.map(a=>parseInt(a,10)).slice(0,e)}function ce({storageKey:t,bandCount:e,log:a}){let s=c();function c(){try{let b=localStorage.getItem(t);if(!b)return[];let d=JSON.parse(b);return Array.isArray(d)?d.filter(f=>f&&oe(f.id)&&typeof f.name=="string"&&Array.isArray(f.bands)&&f.bands.length===e).map(f=>({id:f.id,name:f.name.trim(),bands:Ve(f.bands,e)})).filter(f=>f.name):[]}catch(b){return a(`Failed to load custom presets: ${b.message}`,"err"),[]}}function o(){localStorage.setItem(t,JSON.stringify(s))}return{isCustomPresetValue:oe,getAll(){return s.slice()},createId(){return`custom:${Date.now()}:${Math.random().toString(16).slice(2,8)}`},getById(b){return s.find(d=>d.id===b)||null},getByName(b){return s.find(d=>d.name===b)||null},findByBands(b){return s.find(d=>d.bands.length===e&&b.length===e&&d.bands.every((f,E)=>f===b[E]))||null},save(b){let d=s.findIndex(f=>f.id===b.id);d>=0?s[d]=b:s.push(b),s.sort((f,E)=>f.name.localeCompare(E.name)),o()},remove(b){s=s.filter(d=>d.id!==b),o()}}}function le(t,e){return{id:e,bands:new Array(t).fill(0)}}function de(t){let e=Object.fromEntries(t.capabilities.eq.targets.map(a=>[a.value,le(t.capabilities.eq.bandCount,t.capabilities.eq.customPresetId)]));return{connection:{device:null,server:null,commandCharacteristic:null,connected:!1},customEqPresets:[],eqSlots:e,ui:{}}}function T(t,e){let a=e?.capabilities?.eq?.liveTarget||"active";return t.eqSlots[a]}function ue(t,e){t.eqSlots=Object.fromEntries(e.capabilities.eq.targets.map(a=>[a.value,le(e.capabilities.eq.bandCount,e.capabilities.eq.customPresetId)]))}var Fe={unknown:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTEgMThWNmgxNi4wMjVxLS41LjQtLjg3NS45VDE1LjUyNSA4SDN2OGgxNC4wNXEuMS42MjUuNDUgMS4xMzh0Ljg1Ljg2MnptMTguMjg4LTEuNzg3UTE5IDE1LjkyNCAxOSAxNS41dC4yODgtLjcxMlQyMCAxNC41dC43MTMuMjg4dC4yODcuNzEydC0uMjg4LjcxM1QyMCAxNi41dC0uNzEyLS4yODhtLjAxMi0yLjczN3EwLS40LjAxMy0uNzYydC4xNjItLjcxM3EuMTc1LS4zNS40NjMtLjYxMnQuNTYyLS41MzhxLjMtLjI3NS41NS0uNjEydC4yNS0uNzYzcTAtLjUtLjM4Ny0uOHQtLjkxMy0uM3EtLjUgMC0uODg4LjMyNXQtLjUzNy44MjVMMTcuMyA5cS4yNS0uOSAxLTEuNDVUMjAgN3ExLjEgMCAxLjkxMy42ODh0LjgxMiAxLjczN3EwIC41NzUtLjI4OCAxLjA3NXQtLjcxMi45MjVxLS4yNS4yNS0uNDg4LjQ3NXQtLjM4Ny41NXEtLjE3NS4zNS0uMTI1IDEuMDI1ek00IDE1VjloMTEuNTI1djZ6Ii8+PC9zdmc+",level1:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTEgMThWNmgxOS41djEyem0yLTJoMTUuNVY4SDN6bTE4LjUtMS41di01SDIzdjV6TTQgMTVWOWgydjZ6Ii8+PC9zdmc+",level2:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWg0djZ6bS0zIDNWNmgxOS41djEyem0yLTJoMTUuNVY4SDN6bTE4LjUtMS41di01SDIzdjV6Ii8+PC9zdmc+",level3:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWg2djZ6bS0zIDNWNmgxOS41djEyem0yLTJoMTUuNVY4SDN6bTE4LjUtMS41di01SDIzdjV6Ii8+PC9zdmc+",level4:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWg4djZ6bS0zIDNWNmgxOS41djEyem0yLTJoMTUuNVY4SDN6bTE4LjUtMS41di01SDIzdjV6Ii8+PC9zdmc+",level5:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWgxMHY2em0tMyAzVjZoMTkuNXYxMnptMi0yaDE1LjVWOEgzem0xOC41LTEuNXYtNUgyM3Y1eiIvPjwvc3ZnPg==",level6:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWgxMnY2em0tMyAzVjZoMTkuNXYxMnptMi0yaDE1LjVWOEgzem0xOC41LTEuNXYtNUgyM3Y1eiIvPjwvc3ZnPg==",full:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIDAgMjQgMjQiPjxwYXRoIGZpbGw9ImN1cnJlbnRDb2xvciIgZD0iTTQgMTVWOWgxMy41djZ6bS0zIDNWNmgxOS41djEyem0yLTJoMTUuNVY4SDN6bTE4LjUtMS41di01SDIzdjV6Ii8+PC9zdmc+"};function pe(t,e){let a=parseInt(t.min,10),s=parseInt(t.max,10),c=(e-a)/(s-a)*100;t.style.setProperty("--slider-fill",`${c}%`)}function Re(t){return`${t>=0?"+":""}${t}`}function Ue(t){if(t.length===0)return"";if(t.length===1)return`M ${t[0].x} ${t[0].y}`;let e=`M ${t[0].x} ${t[0].y}`;for(let a=0;a<t.length-1;a+=1){let s=t[a-1]||t[a],c=t[a],o=t[a+1],b=t[a+2]||o,d={x:c.x+(o.x-s.x)/6,y:c.y+(o.y-s.y)/6},f={x:o.x-(b.x-c.x)/6,y:o.y-(b.y-c.y)/6};e+=` C ${d.x} ${d.y}, ${f.x} ${f.y}, ${o.x} ${o.y}`}return e}function fe({appTitle:t,dom:e,getProfile:a,state:s,presets:c}){function o(n=[],i=[]){return n.length===i.length&&n.every((r,l)=>r===i[l])}function b(n){return m().capabilities.eq.presets.find(i=>i.software&&Array.isArray(i.bands)&&o(i.bands,n))||null}function d(n){if(!n)return null;if(n.id!==m().capabilities.eq.customPresetId)return String(n.id);let i=b(n.bands);if(i)return i.value;let r=c.findByBands(n.bands);return r?r.id:null}function f(n){return m().capabilities.eq.targets.find(r=>r.value===n)?.label||"Device EQ"}function E(n){let i=m().capabilities.eq.presets.find(r=>r.value===n&&Array.isArray(r.bands));return i?i.bands:c.isCustomPresetValue(n)?c.getById(n)?.bands??null:null}function N(){if(!e.eqCurvePath||!e.eqCurveGlow||!e.eqCurveFill||!e.eqContainer||e.eqSliderWrappers.length===0)return;let n=e.eqContainer.getBoundingClientRect();if(n.width===0||n.height===0)return;e.eqCurveLayer.setAttribute("viewBox",`0 0 ${n.width} ${n.height}`);let i=20,r=e.eqSliderWrappers.map((A,x)=>{let $=e.eqSliders[x].getBoundingClientRect(),K=parseInt(e.eqSliders[x].value,10),_=parseInt(e.eqSliders[x].min,10),z=parseInt(e.eqSliders[x].max,10),U=(K-_)/(z-_),G=Math.max($.height-i,1);return{x:$.left-n.left+$.width/2,y:$.top-n.top+i/2+(1-U)*G}}),l=e.eqSliders[0].getBoundingClientRect(),w=l.top-n.top+i/2,S=w+Math.max(l.height-i,1),C=e.eqCurveLayer.querySelector("#eqCurveFillGradient");C&&(C.setAttribute("y1",String(S)),C.setAttribute("y2",String(w)));let g=Ue(r),P=`${g} L ${r[r.length-1].x} ${n.height} L ${r[0].x} ${n.height} Z`;e.eqCurveFill.setAttribute("d",P),e.eqCurvePath.setAttribute("d",g),e.eqCurveGlow.setAttribute("d",g)}function M(){if(typeof ResizeObserver<"u"){let n=new ResizeObserver(()=>N());n.observe(e.eqContainer),e.eqSliderWrappers.forEach(i=>n.observe(i))}else window.addEventListener("resize",N)}M();function m(){return a()}function B(){let n=m().capabilities.features;if(!n||n.length===0){e.dynamicSettingsContainer.style.display="none";return}e.dynamicSettingsContainer.innerHTML="",e.dynamicInputs={};let i=document.createElement("div");i.className="settings-section default",e.dynamicSettingsContainer.appendChild(i),n.forEach(r=>{if(r.type==="divider"){i=document.createElement("div"),i.className=`settings-section ${r.style||"original"}`;let l=document.createElement("div");l.className="setting-divider",l.textContent=r.label,i.appendChild(l),e.dynamicSettingsContainer.appendChild(i);return}if(r.type==="select"){let l=document.createElement("div");l.className="setting-row";let w=document.createElement("span");w.textContent=r.label;let S=document.createElement("div");S.className="setting-input-wrap";let C=document.createElement("select");C.id=`${r.id}Select`,r.options.forEach(g=>{let P=document.createElement("option");P.value=g.value,P.textContent=g.label,C.append(P)}),S.appendChild(C),l.appendChild(w),l.appendChild(S),i.appendChild(l),e.dynamicInputs[r.id]=C}if(r.type==="toggles"){let l=document.createElement("div");l.className="setting-row toggles";let w=document.createElement("div");w.className="prompt-grid";let S={};r.items.forEach(C=>{let g=document.createElement("label");g.className="prompt-item";let P=document.createElement("input");P.type="checkbox",P.id=`${r.id}-${C.key}`,g.appendChild(P),g.appendChild(document.createTextNode(` ${C.label}`)),w.appendChild(g),S[C.key]=P}),l.appendChild(w),i.appendChild(l),e.dynamicInputs[r.id]=S}if(r.type==="eq-mappings"){let l=document.createElement("div");l.className="setting-mapping-grid";let w=String(m().capabilities.eq.customPresetId),S=[...m().capabilities.eq.presets.filter(g=>g.value!==w),...c.getAll().map(g=>({value:g.id,label:g.name}))],C={};r.targets.forEach(g=>{let P=document.createElement("div");P.className="setting-row";let A=document.createElement("span");A.textContent=g.label;let x=document.createElement("div");x.className="setting-input-wrap";let $=document.createElement("select");$.id=`${g.value}Select`;let K=s.eqSlots[g.value],_=S,z=S[0]?.value;if(K){let U=d(K);U?z=U:(z=w,_=[{value:w,label:f(g.value)},...S])}_.forEach(U=>{let G=document.createElement("option");G.value=U.value,G.textContent=U.label,$.append(G)}),$.value=z,x.appendChild($),P.appendChild(A),P.appendChild(x),l.appendChild(P),C[g.value]=$}),i.appendChild(l),e.dynamicInputs["eq-mappings"]=C}}),e.dynamicSettingsContainer.style.display="flex"}function R(n=null){let i=m().getBatteryIconKey(n),r=Number.isFinite(n);e.batteryHeader.textContent=r?`${n}%`:"--%",e.batteryIcon.src=Fe[i],e.batteryIcon.alt=r?`Battery level ${n}%`:"Battery level unknown"}function O(n){e.volLabel.textContent=n,e.volume.value=n,pe(e.volume,n)}function V(n,i="Connect to Speaker"){e.connectBtnLabel.textContent=i,e.connectBtn.disabled=n,e.connectBtn.classList.toggle("is-loading",n)}function F(n){e.controls.forEach(i=>i.classList.toggle("active",n)),e.headerMeta.classList.toggle("active",n)}function k(n,i){e.errorTitle.textContent=n,e.errorBody.textContent=i,e.errorPanel.classList.add("active")}function W(){e.errorPanel.classList.remove("active")}function j(){e.browserModal.style.display="flex"}function Z(){e.browserModal.style.display="none"}function Pe(){e.diagnosticView.style.display="flex",e.diagnosticStatus.textContent="Ready to connect..."}function Se(){e.diagnosticView.style.display="none"}function Ee(n,i=!1){i?(e.diagnosticStatus.textContent+=`
+${n}`,e.diagnosticStatus.scrollTop=e.diagnosticStatus.scrollHeight):e.diagnosticStatus.textContent=n}function Be(n){if(n===null){e.diagnosticProgressWrap.style.display="none",e.diagnosticProgressBar.style.width="0%";return}e.diagnosticProgressWrap.style.display="block",e.diagnosticProgressBar.style.width=`${n}%`}function xe(n){e.diagnosticControls.style.display=n?"block":"none"}function Ie(n){let i=[...m().capabilities.eq.presets,...c.getAll().map(r=>({value:r.id,label:r.name}))];e.eqPreset.innerHTML="",i.forEach(r=>{let l=document.createElement("option");l.value=r.value,l.textContent=r.label,e.eqPreset.append(l)}),e.eqPreset.value=i.some(r=>r.value===n)?n:String(m().capabilities.eq.customPresetId)}function ae(){let n=T(s,m()),i=e.eqPreset.value,r=c.isCustomPresetValue(i),l=E(i),w=!l||!o(n.bands,l);e.saveCustomPresetBtn.disabled=n.id!==m().capabilities.eq.customPresetId||!w,e.renameCustomPresetBtn.disabled=!r,e.deleteCustomPresetBtn.disabled=!r}function De(n){if(n){let i=parseInt(n.slice(1,3),16),r=parseInt(n.slice(3,5),16),l=parseInt(n.slice(5,7),16);e.eqCurvePath.style.stroke=`rgba(${i}, ${r}, ${l}, 0.6)`,e.eqCurveGlow.style.stroke=`rgba(${i}, ${r}, ${l}, 0.12)`,e.eqCurveLayer.querySelectorAll("stop").forEach(w=>{w.style.stopColor=n})}else e.eqCurvePath.style.stroke="",e.eqCurveGlow.style.stroke="",e.eqCurveLayer.querySelectorAll("stop").forEach(i=>{i.style.stopColor=""})}function Le(n){let i=n.id===m().capabilities.eq.customPresetId,r=e.eqPreset.value,l=i?m().capabilities.eq.presets.find(g=>g.value===r&&g.software):m().capabilities.eq.presets.find(g=>g.value===String(n.id)),w=l?.bands,S=i||!!w,C=i?n.bands:w??new Array(m().capabilities.eq.bandCount).fill(0);e.eqSliders.forEach((g,P)=>{let A=C[P]??0;g.value=A,g.disabled=!1;let x=document.getElementById(`bandValue${P}`);S?(g.classList.remove("no-data"),pe(g,A),x&&(x.textContent=Re(A))):(g.classList.add("no-data"),g.style.setProperty("--slider-fill","0%"),x&&(x.textContent="\u2013"))}),e.eqContainer.style.opacity=S?"1":"0.5",De(S?l?.color??null:null),S?N():(e.eqCurvePath.setAttribute("d",""),e.eqCurveGlow.setAttribute("d",""),e.eqCurveFill.setAttribute("d",""))}function Ae(n){Object.entries(n).forEach(([i,r])=>{let l=e.dynamicInputs[i];l&&(l instanceof HTMLSelectElement?l.value=String(r):typeof l=="object"&&r!=null&&Object.entries(r).forEach(([w,S])=>{let C=l[w];C&&(C instanceof HTMLInputElement&&C.type==="checkbox"?C.checked=!!S:C instanceof HTMLSelectElement&&(C.value=String(S)))}))})}function X(n=null){let i=T(s,m()),r=i.id!==m().capabilities.eq.customPresetId?String(i.id):n??e.eqPreset.value;Ie(r),Le(i),ae()}function se(n){e.headerTitle.textContent=n||t}function ke(n){se(n),e.connectCard.style.display="none",e.page.style.display="flex",F(!0),B()}function $e(){e.connectCard.style.display="",e.page.style.display="none",V(!1)}function Te(){let n=e.dynamicInputs["eq-mappings"];if(!n)return;let i=String(m().capabilities.eq.customPresetId),r=[...m().capabilities.eq.presets.filter(l=>l.value!==i),...c.getAll().map(l=>({value:l.id,label:l.name}))];Object.entries(n).forEach(([l,w])=>{let S=s.eqSlots[l],C=r,g=r[0]?.value;if(S){let P=d(S);P?g=P:(g=i,C=[{value:i,label:f(l)},...r])}w.innerHTML="",C.forEach(P=>{let A=document.createElement("option");A.value=P.value,A.textContent=P.label,w.appendChild(A)}),w.value=g})}function Ne({matchPreset:n=!0}={}){if(n){let i=T(s,m());if(i.id===m().capabilities.eq.customPresetId){let r=b(i.bands),l=c.findByBands(i.bands);e.eqPreset.value=r?.value||l?.id||String(m().capabilities.eq.customPresetId)}}X(),Te()}function Me(){se(t),B(),R(),O(parseInt(e.volume.value,10)),X()}function Oe(n){let i=[e.eqPreset,e.activateEqBtn,e.flattenEqBtn,e.saveCustomPresetBtn,e.deleteCustomPresetBtn];if(Object.values(e.dynamicInputs).forEach(r=>{r instanceof HTMLElement?i.push(r):typeof r=="object"&&Object.values(r).forEach(l=>i.push(l))}),i.forEach(r=>{r.disabled=n}),n){e.eqSliders.forEach(r=>{r.disabled=!0}),e.eqContainer.style.opacity="0.5";return}X()}return{hideBrowserModal:Z,hideErrorPanel:W,renderConnectedState:ke,renderDisconnectedState:$e,renderEqSection:X,renderInitial:Me,renderSettings:Ae,setConnectLoading:V,setControlsVisible:F,setEqInputsDisabled:Oe,showBrowserModal:j,showDiagnosticView:Pe,hideDiagnosticView:Se,updateDiagnosticStatus:Ee,setDiagnosticProgress:Be,setDiagnosticControlsVisible:xe,showErrorPanel:k,syncActiveTargetSelection:Ne,updateBatteryStatus:R,updateCustomPresetControls:ae,updateVolumeSlider:O}}function me(t,e,a=[]){let s=10+a.length,c=[8,238,0,0,0,t,e,s&255,s>>8&255,...a],o=c.reduce((b,d)=>b+d&255,0);return new Uint8Array([...c,o])}function be(t){let e=t instanceof Uint8Array?t:new Uint8Array(t.buffer);return e.length<10?null:{command:e[6],payload:e.slice(9,-1)}}var He=[[100,"full"],[84,"level6"],[67,"level5"],[50,"level4"],[34,"level3"],[17,"level2"],[0,"level1"]],We={getDeviceDisplayName(t){return t?.name||"Unknown speaker"},getFriendlyConnectError(t){return!t||t.name==="NotFoundError"||t.message==="User cancelled the requestDevice() chooser."?null:t.name==="NotAllowedError"?{title:"Bluetooth access was blocked",message:"Please allow Bluetooth access in your browser and try connecting again."}:t.name==="NetworkError"||t.name==="InvalidStateError"?{title:"The speaker did not finish connecting",message:"Please check that the speaker is on, nearby, and not currently connected to the official app. A quick retry often helps."}:{title:"Unable to connect right now",message:"Please make sure the speaker is powered on, nearby, and not already connected to the official app. Sometimes a retry or two is needed to establish a stable link."}},getBatteryIconKey(t){if(!Number.isFinite(t))return"unknown";for(let[e,a]of He)if(t>=e)return a;return"level1"}};function ee(t){return{...We,...t}}var je=1,te=254;function ge(t,e,a){return Array.from(t.slice(e,e+a)).map(s=>s-8)}var ve=ee({id:"xsound-plus-2",bluetoothFilters:[{namePrefix:"LE_Tribit XSound Plus 2"}],uuids:{service:"21963523-0000-1000-8000-00805f9b34fb",command:"00007777-0000-1000-8000-00805f9b34fb",response:"00008888-0000-1000-8000-00805f9b34fb"},capabilities:{features:[{type:"select",id:"shutdownMode",label:"Auto Off",options:[{value:"0",label:"Never"},{value:"1",label:"15 Minutes"},{value:"2",label:"30 Minutes"},{value:"3",label:"45 Minutes"},{value:"4",label:"60 Minutes"}]},{type:"divider",style:"alternate",label:"EQ Button Mappings"},{type:"eq-mappings",targets:[{value:"btn0",label:"LED Off"},{value:"btn1",label:"White LED"},{value:"btn2",label:"Blue LED"}]},{type:"divider",style:"original",label:"Voice & Beep Prompts"},{type:"toggles",id:"prompts",items:[{key:"p",label:"Power On/Off Beep"},{key:"b",label:"Bluetooth Pairing Beep"},{key:"l",label:"Low Battery Beep"},{key:"m",label:"Maximum Volume Beep"},{key:"t",label:"TWS Pairing Beep"}]}],eq:{bandCount:9,customPresetId:te,liveTarget:"active",targets:[{value:"active",label:"Current Settings"},{value:"btn0",label:"LED Off"},{value:"btn1",label:"White LED"},{value:"btn2",label:"Blue LED"}],presets:[{value:"254",label:"Custom"},{value:"sw:balanced",label:"Balanced",software:!0,color:"#81c784",bands:[1,0,1,2,2,0,1,-2,-6]},{value:"0",label:"XBass Off",color:"#e65100",bands:null},{value:"1",label:"XBass",color:"#00bcd4",bands:null},{value:"2",label:"Audiobook",color:"#ff8a65",bands:null},{value:"3",label:"MaxSound traditional",color:"#f9e31c",bands:[-6,-3,0,0,0,0,-3,-5,-5]},{value:"4",label:"Rock",color:"#9c27b0",bands:[0,0,0,0,0,0,3,4,4]},{value:"5",label:"Jazz",color:"#a0785a",bands:[4,0,4,4,0,0,0,0,0]}]}},matchesDevice(t){return t?.name==="LE_Tribit XSound Plus 2"},getDeviceDisplayName(t){return(t?.name||"Tribit speaker").replace(/^LE_/,"")},buildCommand(t,e=[]){return me(je,t,e)},getInitialSyncCommands(){return[2,9,17,145,5,25]},createVolumeCommand(t){return this.buildCommand(136,[Math.round(t*31/100)])},createApplyEqCommand(t){return this.buildCommand(130,[t.id,...t.bands.map(e=>e+8)])},createSaveEqCommand(t,e){let a=parseInt(t.replace("btn",""),10);return this.buildCommand(24,[3,a,e.id,...e.bands.map(s=>s+8)])},createSettingsCommands(t){let e=this.capabilities.features.find(a=>a.id==="prompts");return[this.buildCommand(140,[parseInt(t.shutdownMode,10)]),this.buildCommand(144,e.items.map(a=>t.prompts[a.key]?1:0))]},decodeNotification(t){let e=be(t);if(!e)return null;switch(e.command){case 2:return{batteryPercentage:e.payload[0]};case 9:return{volumePercent:Math.round(e.payload[0]*100/31)};case 5:return e.payload.length>=10?{eqUpdates:[{target:"active",id:e.payload[0],bands:e.payload[0]===te?ge(e.payload,1,9):null}]}:null;case 25:return e.payload.length>=12?{eqUpdates:[{target:`btn${e.payload[1]}`,id:e.payload[2],bands:e.payload[2]===te?ge(e.payload,3,9):null}]}:null;case 17:return e.payload.length>=3?{shutdownMode:String(e.payload[2])}:null;case 145:return e.payload.length>=5?{prompts:{p:!!e.payload[0],b:!!e.payload[1],l:!!e.payload[2],m:!!e.payload[3],t:!!e.payload[4]}}:null;default:return null}}});var J=[ve];function ye(){return J[0]}function he(){return J.flatMap(t=>t.bluetoothFilters||[])}function ne(){return Array.from(new Set(J.map(t=>t.uuids?.service).filter(Boolean)))}function Ce(t){return J.find(e=>e.matchesDevice?.(t))||null}var _e="Tribit Web Control",ze="tribit.customEqPresets.v1",u=ye();function I(t,e=""){let a=e?`[${e.toUpperCase()}] `:"";console.log(`${a}${t}`)}async function Ge(){if("serviceWorker"in navigator)try{await navigator.serviceWorker.register("./sw.js"),I("Service worker registered")}catch(t){I(`Service worker registration failed: ${t.message}`,"err")}}var h=re(),y=de(u),q=ce({storageKey:ze,bandCount:u.capabilities.eq.bandCount,log:I});y.customEqPresets=q.getAll();var p=fe({appTitle:_e,dom:h,getProfile:()=>u,state:y,presets:q}),D=ie({log:I,onDisconnected:Qe,onNotification:Je}),H=null,Q=null,L=null;function Y(){y.customEqPresets=q.getAll()}function qe(t=[],e=[]){return t.length===e.length&&t.every((a,s)=>a===e[s])}function Xe(t){return u.capabilities.eq.presets.find(e=>e.software&&Array.isArray(e.bands)&&qe(e.bands,t))||null}function Ke(t){if(t&&(Number.isFinite(t.batteryPercentage)&&p.updateBatteryStatus(t.batteryPercentage),Number.isFinite(t.volumePercent)&&p.updateVolumeSlider(t.volumePercent),(t.shutdownMode!=null||t.prompts)&&p.renderSettings(t),Array.isArray(t.eqUpdates)&&t.eqUpdates.length>0)){let e=!1;t.eqUpdates.forEach(a=>{let s=y.eqSlots[a.target];if(s&&(s.id=a.id,a.bands&&(s.bands=a.bands.slice()),a.target!==u.capabilities.eq.liveTarget&&s.id===u.capabilities.eq.customPresetId&&a.bands&&!Xe(s.bands)&&!q.findByBands(s.bands))){let c=u.capabilities.eq.targets.find(o=>o.value===a.target);if(c){let o=c.label,b=q.getByName(o),d=b?b.id:q.createId();q.save({id:d,name:o,bands:s.bands.slice()}),e=!0}}}),e&&Y(),p.syncActiveTargetSelection()}}function Je(t){H&&H.notifications.push({time:new Date().toISOString(),hex:Array.from(t).map(e=>e.toString(16).padStart(2,"0")).join(" ")}),Ke(u.decodeNotification(t,y))}function Qe(){y.connection.connected=!1,y.connection.device=null,y.connection.commandCharacteristic=null,y.connection.server=null,p.renderDisconnectedState(),p.setControlsVisible(!1)}async function Ye(){p.setEqInputsDisabled(!0),I("Syncing initial state...");for(let t of u.getInitialSyncCommands())await D.write(y.connection.commandCharacteristic,u.buildCommand(t)),await new Promise(e=>setTimeout(e,250));p.setEqInputsDisabled(!1),p.renderEqSection()}async function Ze(){if(!navigator.bluetooth){p.showBrowserModal();return}p.hideErrorPanel(),p.setConnectLoading(!0,"Connecting...");try{let t=await D.requestDevice(he(),ne()),e=Ce(t);if(!e)throw new Error(`Unsupported speaker selected: ${t.name||"Unknown device"}`);e!==u&&(u=e,ue(y,u),y.customEqPresets=q.getAll());let a=await D.connect(t,u);y.connection={...y.connection,...a,connected:!0},p.renderConnectedState(u.getDeviceDisplayName(a.device)),await Ye()}catch(t){I(t.message,"err");let e=u.getFriendlyConnectError(t);e&&p.showErrorPanel(e.title,e.message),p.setConnectLoading(!1)}}async function et(){if(!y.connection.commandCharacteristic)return;let t={},e=[];u.capabilities.features.forEach(s=>{if(s.type==="select")t[s.id]=h.dynamicInputs[s.id].value;else if(s.type==="toggles")t[s.id]=Object.fromEntries(Object.entries(h.dynamicInputs[s.id]).map(([c,o])=>[c,!!o.checked]));else if(s.type==="eq-mappings"){let c=h.dynamicInputs["eq-mappings"];for(let[o,b]of Object.entries(c)){let d=b.value,f,E,N=u.capabilities.eq.presets.find(M=>M.value===d&&M.software&&M.bands);if(N)f=u.capabilities.eq.customPresetId,E=N.bands.slice();else if(q.isCustomPresetValue(d)){let M=q.getById(d);f=u.capabilities.eq.customPresetId,E=M.bands}else f=parseInt(d,10),f===u.capabilities.eq.customPresetId?E=y.eqSlots[o].bands.slice():E=new Array(u.capabilities.eq.bandCount).fill(0);y.eqSlots[o]={id:f,bands:E.slice()},e.push(u.createSaveEqCommand(o,{id:f,bands:E}))}}});let a=u.createSettingsCommands(t);e.unshift(...a);for(let[s,c]of e.entries())await D.write(y.connection.commandCharacteristic,c),s<e.length-1&&await new Promise(o=>setTimeout(o,200));I("TX: Settings applied","tx")}async function tt(){y.connection.commandCharacteristic&&(await D.write(y.connection.commandCharacteristic,u.createApplyEqCommand(T(y,u))),I("TX: Applied to Live Sound","tx"))}function nt(){let t=T(y,u),e=h.eqPreset.value,a=u.capabilities.eq.presets.find(o=>o.value===e&&o.software&&Array.isArray(o.bands)),s=u.capabilities.eq.presets.find(o=>o.value===e&&Array.isArray(o.bands)),c=q.isCustomPresetValue(e)?q.getById(e):null;t.id=u.capabilities.eq.customPresetId,t.bands.fill(0),c?(h.eqPreset.value=c.id,L=null):a?(h.eqPreset.value=a.value,L=a.label):s?(h.eqPreset.value=s.value,L=s.label):(h.eqPreset.value=String(u.capabilities.eq.customPresetId),L=null),p.renderEqSection(h.eqPreset.value),I("UI: Flattened active curve to 0dB")}function at(t){let e=T(y,u),a=parseInt(t.target.dataset.band,10),s=h.eqPreset.value,c=u.capabilities.eq.presets.find(o=>o.value===s&&o.software);if(e.id!==u.capabilities.eq.customPresetId){let o=u.capabilities.eq.presets.find(b=>b.value===String(e.id));L=o?.label??null,e.bands=o?.bands?o.bands.slice():new Array(u.capabilities.eq.bandCount).fill(0),e.id=u.capabilities.eq.customPresetId,h.eqPreset.value=String(u.capabilities.eq.customPresetId)}else c&&(L=c.label);e.bands[a]=parseInt(t.target.value,10),p.renderEqSection()}function st(t){let e=T(y,u),a=t.target.value,s=u.capabilities.eq.customPresetId,c=u.capabilities.eq.presets.find(o=>o.value===a&&o.software);if(c?.bands)e.id===s&&(Q=e.bands.slice()),L=c.label,e.id=s,e.bands=c.bands.slice();else if(parseInt(a,10)===s&&!q.isCustomPresetValue(a))e.id=s,L=null,Q&&(e.bands=Q.slice());else if(e.id===s&&(Q=e.bands.slice(),L=null),q.isCustomPresetValue(a)){let o=q.getById(a);if(!o){p.renderEqSection();return}e.id=s,e.bands=o.bands.slice()}else e.id=parseInt(a,10);p.renderEqSection()}function it(){let t=T(y,u);if(t.id!==u.capabilities.eq.customPresetId){window.alert("Switch to a custom EQ curve before saving a custom preset.");return}let e=h.eqPreset.value,a=q.isCustomPresetValue(e)?q.getById(e):null,s=u.capabilities.eq.presets.map(E=>E.label.toLowerCase()),o=a&&!qe(a.bands,t.bands)?`${a.name} (edited)`:a?a.name:L?`${L} (edited)`:"",b=window.prompt("Name this custom preset:",o);if(b===null)return;let d=b.trim();if(!d){window.alert("Preset name cannot be empty.");return}if(d.toLowerCase()==="custom"||s.includes(d.toLowerCase())){window.alert(`"${d}" is a reserved preset name. Please choose a different name.`);return}let f;if(a&&a.name===d)f=a.id;else{let E=q.getByName(d);if(E){if(!window.confirm(`Overwrite the existing preset "${d}"?`))return;f=E.id}else f=q.createId()}q.save({id:f,name:d,bands:t.bands.slice()}),L=null,Y(),p.renderEqSection(f),p.syncActiveTargetSelection({matchPreset:!1}),I(`UI: Saved custom preset "${d}"`)}function rt(){let t=h.eqPreset.value,e=q.getById(t);if(!e)return;let a=window.prompt("Rename preset:",e.name);if(a===null)return;let s=a.trim();if(!s){window.alert("Preset name cannot be empty.");return}if(s.toLowerCase()==="custom"){window.alert('"Custom" is reserved. Please choose a different name.');return}if(s===e.name)return;let c=q.getByName(s);if(c&&c.id!==e.id){if(!window.confirm(`A preset named "${s}" already exists. Replace it?`))return;q.remove(c.id)}q.save({id:e.id,name:s,bands:e.bands.slice()}),Y(),h.eqPreset.value=t,p.syncActiveTargetSelection({matchPreset:!1}),I(`UI: Renamed preset to "${s}"`)}function ot(){let t=q.getById(h.eqPreset.value);!t||!window.confirm(`Delete custom preset "${t.name}"?`)||(q.remove(t.id),Y(),p.syncActiveTargetSelection({matchPreset:!1}),I(`UI: Deleted custom preset "${t.name}"`))}async function ct(){p.updateDiagnosticStatus("Opening Bluetooth selector...");try{let t=await D.requestDevice([{namePrefix:"LE_"},{namePrefix:"Tribit"}],ne());p.updateDiagnosticStatus(`Connected to ${t.name||"Unknown"}. Reading GATT...`);let e={uuids:{service:"21963523-0000-1000-8000-00805f9b34fb",command:"00007777-0000-1000-8000-00805f9b34fb",response:"00008888-0000-1000-8000-00805f9b34fb"}},a=await D.connect(t,e);y.connection={...y.connection,...a,connected:!0},p.updateDiagnosticStatus("Handshake active. Please press speaker buttons now!"),p.updateDiagnosticStatus("Sniffing data for 15 seconds...",!0),p.setDiagnosticControlsVisible(!0),H={timestamp:new Date().toISOString(),deviceName:t.name,notifications:[]};let s=await D.dumpDeviceInfo(t);H.deviceInfo=s;let c=15;p.setDiagnosticProgress(100);let o=setInterval(()=>{c-=1,p.setDiagnosticProgress(c/15*100),c<=0&&clearInterval(o)},1e3);await new Promise(E=>setTimeout(E,15e3)),p.setDiagnosticProgress(null);let b=new Blob([JSON.stringify(H,null,2)],{type:"application/json"}),d=URL.createObjectURL(b),f=document.createElement("a");f.href=d,f.download=`tribit-diagnostic-${t.name||"unknown"}-${Date.now()}.json`,f.click(),URL.revokeObjectURL(d),p.updateDiagnosticStatus("DUMP COMPLETE! File downloaded.",!0),window.alert("Diagnostic dump complete and downloaded.")}catch(t){I(`Diagnostic failed: ${t.message}`,"err"),p.updateDiagnosticStatus(`Error: ${t.message}`,!0)}finally{H=null,y.connection.connected&&D.disconnect(y.connection)}}async function lt(){if(!y.connection.connected||!y.connection.commandCharacteristic){p.updateDiagnosticStatus("Cannot send: Not connected to command characteristic.",!0);return}let t=h.diagnosticHexInput.value.replace(/\s+/g,"");if(!/^[0-9A-Fa-f]+$/.test(t)||t.length%2!==0){p.updateDiagnosticStatus('Error: Invalid hex string. Use pairs like "09 FF".',!0);return}let e=new Uint8Array(t.match(/.{1,2}/g).map(a=>parseInt(a,16)));try{await D.write(y.connection.commandCharacteristic,e),p.updateDiagnosticStatus(`TX -> ${h.diagnosticHexInput.value}`,!0)}catch(a){p.updateDiagnosticStatus(`Write Error: ${a.message}`,!0)}}function we(){window.location.hash==="#dump"||window.location.hash==="#debug"?p.showDiagnosticView():(p.hideDiagnosticView(),p.setDiagnosticControlsVisible(!1))}function dt(){h.connectBtn.addEventListener("click",Ze),h.browserModalClose.addEventListener("click",p.hideBrowserModal),h.flattenEqBtn.addEventListener("click",nt),h.activateEqBtn.addEventListener("click",tt),h.applySettingsBtn.addEventListener("click",et),h.diagnosticConnectBtn.addEventListener("click",ct),h.diagnosticSendBtn.addEventListener("click",lt),h.diagnosticCloseBtn.addEventListener("click",()=>{window.location.hash=""}),h.volume.addEventListener("input",t=>{p.updateVolumeSlider(parseInt(t.target.value,10))}),h.volume.addEventListener("change",async t=>{y.connection.commandCharacteristic&&await D.write(y.connection.commandCharacteristic,u.createVolumeCommand(parseInt(t.target.value,10)))}),h.eqSliders.forEach(t=>{t.addEventListener("input",at)}),h.eqPreset.addEventListener("change",st),h.saveCustomPresetBtn.addEventListener("click",it),h.renameCustomPresetBtn.addEventListener("click",rt),h.deleteCustomPresetBtn.addEventListener("click",ot),window.addEventListener("hashchange",we),we(),window.addEventListener("beforeunload",()=>{D.disconnect(y.connection)})}Ge();p.renderInitial();p.setControlsVisible(!1);dt();})();
 
 </script>
 </body>

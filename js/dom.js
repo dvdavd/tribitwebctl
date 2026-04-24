@@ -5,15 +5,10 @@ function byId(id) {
 export function createDom() {
     const eqSliders = Array.from(document.querySelectorAll('.eq-slider'));
     const eqSliderWrappers = Array.from(document.querySelectorAll('.eq-slider-wrapper'));
-    const promptCheckboxes = {
-        p: byId('prompt-p'),
-        b: byId('prompt-b'),
-        l: byId('prompt-l'),
-        m: byId('prompt-m'),
-        t: byId('prompt-t')
-    };
 
     return {
+        connectCard: byId('connectCard'),
+        page: document.querySelector('.page'),
         pageHeader: document.querySelector('.page-header'),
         headerTitle: byId('headerTitle'),
         headerMeta: byId('headerMeta'),
@@ -27,14 +22,12 @@ export function createDom() {
         errorBody: byId('errorBody'),
         volume: byId('volume'),
         volLabel: byId('volLabel'),
-        shutdownSelect: byId('shutdownSelect'),
-        btn0Select: byId('btn0Select'),
-        btn1Select: byId('btn1Select'),
-        btn2Select: byId('btn2Select'),
-        promptCheckboxes,
+        dynamicSettingsContainer: byId('dynamicSettingsContainer'),
+        dynamicInputs: {}, // Populated dynamically by UI
         applySettingsBtn: byId('applySettingsBtn'),
         eqPreset: byId('eqPreset'),
         saveCustomPresetBtn: byId('saveCustomPresetBtn'),
+        renameCustomPresetBtn: byId('renameCustomPresetBtn'),
         deleteCustomPresetBtn: byId('deleteCustomPresetBtn'),
         eqContainer: byId('eqContainer'),
         eqCurveLayer: byId('eqCurveLayer'),
@@ -46,6 +39,15 @@ export function createDom() {
         activateEqBtn: byId('activateEqBtn'),
         flattenEqBtn: byId('flattenEqBtn'),
         browserModal: byId('browserModal'),
-        browserModalClose: byId('browserModalClose')
+        browserModalClose: byId('browserModalClose'),
+        diagnosticView: byId('diagnosticView'),
+        diagnosticStatus: byId('diagnosticStatus'),
+        diagnosticProgressWrap: byId('diagnosticProgressWrap'),
+        diagnosticProgressBar: byId('diagnosticProgressBar'),
+        diagnosticControls: byId('diagnosticControls'),
+        diagnosticHexInput: byId('diagnosticHexInput'),
+        diagnosticSendBtn: byId('diagnosticSendBtn'),
+        diagnosticConnectBtn: byId('diagnosticConnectBtn'),
+        diagnosticCloseBtn: byId('diagnosticCloseBtn')
     };
 }

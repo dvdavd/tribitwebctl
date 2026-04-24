@@ -539,6 +539,135 @@ input[type="text"]:focus-visible {
     outline: none;
 }
 
+.sleep-timer-toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sleep-timer-set-btn {
+    font-size: 0.8rem;
+    height: 24px;
+    padding: 0 0.55rem;
+    border-radius: 5px;
+    border: 1px solid var(--line);
+    background: var(--panel-soft);
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.sleep-timer-set-btn:hover {
+    background: var(--slider-track);
+}
+
+.sleep-timer-drums {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0 1.25rem;
+    margin-inline: -1.25rem;
+    background: var(--surface-tint);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+.drum-roll {
+    position: relative;
+}
+
+.drum-roll-viewport {
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    width: 64px;
+    border-radius: 8px;
+    cursor: grab;
+    mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent);
+}
+
+.drum-roll-viewport.dragging {
+    cursor: grabbing;
+    scroll-snap-type: none;
+}
+
+.drum-roll-viewport::-webkit-scrollbar {
+    display: none;
+}
+
+.drum-roll-item {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    scroll-snap-align: center;
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+}
+
+.drum-roll-highlight {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 44px;
+    transform: translateY(-50%);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.04);
+    pointer-events: none;
+    border-radius: 4px;
+}
+
+.drum-roll-unit {
+    font-size: 1.1rem;
+    color: var(--muted);
+    align-self: center;
+}
+
+.sleep-timer-modal .modal-content {
+    background: var(--panel);
+    max-width: 260px;
+    padding: 1.25rem;
+    border-radius: 8px;
+}
+
+.sleep-timer-modal-title {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+}
+
+.sleep-timer-modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    padding-top: 1.25rem;
+}
+
+.primary-btn {
+    padding: 0.55rem 1.25rem;
+    border-radius: 6px;
+    border: none;
+    background: var(--primary);
+    color: var(--button-text-dark);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.primary-btn:hover {
+    background: var(--primary-bright);
+}
+
 .eq-toolbar {
     display: flex;
     flex-direction: column;
@@ -857,7 +986,7 @@ button:disabled .btn-icon {
     }
 
     /* Keep connect card styled as a card even when generic cards are flattened */
-    .connect-card {
+    .card.connect-card {
         background: var(--panel);
         border: 1px solid var(--line);
         border-radius: 8px;
@@ -867,7 +996,6 @@ button:disabled .btn-icon {
     .card {
         background: transparent;
         border: 0;
-        border-radius: 0;
         box-shadow: none;
         padding: 0;
     }

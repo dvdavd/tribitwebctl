@@ -32,6 +32,7 @@ async function registerServiceWorker() {
 
 const dom = createDom();
 const state = createAppState(profile);
+state.deviceSleepTimer = null;
 const presets = createPresetStore({
     storageKey: CUSTOM_EQ_STORAGE_KEY,
     bandCount: profile.capabilities.eq.bandCount,
@@ -81,7 +82,8 @@ function applyDecodedUpdate(update) {
         ui.updateVolumeSlider(update.volumePercent);
     }
 
-    if (update.shutdownMode != null || update.prompts) {
+    if (update.sleepTimer != null || update.shutdownMode != null || update.prompts) {
+        if (update.sleepTimer != null) state.deviceSleepTimer = update.sleepTimer;
         ui.renderSettings(update);
     }
 
@@ -201,6 +203,13 @@ async function applySettings() {
             settings[feature.id] = Object.fromEntries(
                 Object.entries(dom.dynamicInputs[feature.id]).map(([key, input]) => [key, !!input.checked])
             );
+        } else if (feature.type === 'sleep-timer') {
+            const inputs = dom.dynamicInputs[feature.id];
+            settings[feature.id] = {
+                enabled: !!inputs.enabled.checked,
+                hours:   Math.max(0, Math.min(23, parseInt(inputs.hours.value, 10) || 0)),
+                minutes: Math.max(0, Math.min(59, parseInt(inputs.minutes.value, 10) || 0))
+            };
         } else if (feature.type === 'eq-mappings') {
             const mappingSelects = dom.dynamicInputs['eq-mappings'];
             for (const [targetKey, select] of Object.entries(mappingSelects)) {
@@ -231,7 +240,13 @@ async function applySettings() {
         }
     });
 
-    const settingsCommands = profile.createSettingsCommands(settings);
+    const uiTimer = settings.sleepTimer;
+    const known = state.deviceSleepTimer;
+    const skipSleepTimer = known != null && uiTimer != null
+        && uiTimer.enabled === known.enabled
+        && uiTimer.hours === known.hours
+        && uiTimer.minutes === known.minutes;
+    const settingsCommands = profile.createSettingsCommands(settings, { skipSleepTimer });
     commands.unshift(...settingsCommands);
 
     dom.applySettingsBtn.disabled = true;

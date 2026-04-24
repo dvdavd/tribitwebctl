@@ -233,6 +233,214 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
                 dom.dynamicInputs[feature.id] = inputs;
             }
 
+            if (feature.type === 'sleep-timer') {
+                // Hidden data inputs — used by applySettings / renderSettings unchanged
+                const hoursInput = document.createElement('input');
+                hoursInput.type = 'number'; hoursInput.min = 0; hoursInput.max = 23; hoursInput.value = 0;
+                hoursInput.id = `${feature.id}-hours`; hoursInput.hidden = true;
+
+                const minutesInput = document.createElement('input');
+                minutesInput.type = 'number'; minutesInput.min = 0; minutesInput.max = 59; minutesInput.value = 0;
+                minutesInput.id = `${feature.id}-minutes`; minutesInput.hidden = true;
+
+                // [Set] button — shows current time, opens picker modal
+                function formatTimerLabel() {
+                    const h = parseInt(hoursInput.value, 10) || 0;
+                    const m = parseInt(minutesInput.value, 10) || 0;
+                    return (h === 0 && m === 0) ? 'Set' : `${h}h ${String(m).padStart(2, '0')}m`;
+                }
+                const setBtn = document.createElement('button');
+                setBtn.className = 'sleep-timer-set-btn';
+                setBtn.textContent = formatTimerLabel();
+                [hoursInput, minutesInput].forEach((inp) =>
+                    inp.addEventListener('input', () => { setBtn.textContent = formatTimerLabel(); })
+                );
+
+                // Toggle
+                const enabledInput = document.createElement('input');
+                enabledInput.type = 'checkbox';
+                enabledInput.id = `${feature.id}-enabled`;
+
+                setBtn.style.display = 'none';
+                enabledInput.addEventListener('change', () => {
+                    setBtn.style.display = enabledInput.checked ? '' : 'none';
+                });
+
+                // Use a div (not label) as the row. Click anywhere except setBtn toggles the checkbox.
+                const rightGroup = document.createElement('div');
+                rightGroup.className = 'sleep-timer-toggle-group';
+                rightGroup.append(setBtn, enabledInput);
+
+                // row-reverse → visual: [label text (left)] [setBtn + toggle (right)]
+                const toggleLabel = document.createElement('div');
+                toggleLabel.className = 'prompt-item';
+                toggleLabel.append(rightGroup, document.createTextNode(` ${feature.label}`));
+
+                toggleLabel.addEventListener('click', (e) => {
+                    if (setBtn.contains(e.target)) return;
+                    enabledInput.checked = !enabledInput.checked;
+                    enabledInput.dispatchEvent(new Event('change'));
+                });
+
+                const grid = document.createElement('div');
+                grid.className = 'prompt-grid';
+                grid.appendChild(toggleLabel);
+
+                const container = document.createElement('div');
+                container.className = 'setting-row toggles';
+                container.appendChild(grid);
+                currentSection.appendChild(container);
+
+                // Drum-roll picker modal
+                function makeDrum(count) {
+                    const ITEM_H = 44;
+                    const VISIBLE = 5;
+
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'drum-roll';
+
+                    const viewport = document.createElement('div');
+                    viewport.className = 'drum-roll-viewport';
+                    viewport.style.height = `${ITEM_H * VISIBLE}px`;
+
+                    const padTop = document.createElement('div');
+                    padTop.className = 'drum-roll-pad';
+                    padTop.style.height = `${ITEM_H * Math.floor(VISIBLE / 2)}px`;
+                    viewport.appendChild(padTop);
+
+                    for (let i = 0; i < count; i++) {
+                        const item = document.createElement('div');
+                        item.className = 'drum-roll-item';
+                        item.textContent = String(i).padStart(2, '0');
+                        item.addEventListener('click', () => {
+                            viewport.scrollTo({ top: i * ITEM_H, behavior: 'smooth' });
+                        });
+                        viewport.appendChild(item);
+                    }
+
+                    const padBot = document.createElement('div');
+                    padBot.className = 'drum-roll-pad';
+                    padBot.style.height = `${ITEM_H * Math.floor(VISIBLE / 2)}px`;
+                    viewport.appendChild(padBot);
+
+                    const highlight = document.createElement('div');
+                    highlight.className = 'drum-roll-highlight';
+
+                    wrapper.appendChild(viewport);
+                    wrapper.appendChild(highlight);
+
+                    function getValue() {
+                        return Math.round(viewport.scrollTop / ITEM_H);
+                    }
+                    function setValue(v) {
+                        viewport.scrollTo({ top: v * ITEM_H, behavior: 'instant' });
+                    }
+
+                    viewport.addEventListener('scrollend', () => {
+                        if (viewport.classList.contains('dragging')) return;
+                        viewport.scrollTop = getValue() * ITEM_H;
+                    });
+
+                    viewport.addEventListener('mousedown', (e) => {
+                        const startY = e.clientY;
+                        const startScrollTop = viewport.scrollTop;
+                        viewport.classList.add('dragging');
+                        dragging = true;
+                        e.preventDefault();
+
+                        function onMove(e) {
+                            viewport.scrollTop = startScrollTop + (startY - e.clientY);
+                        }
+                        function onUp() {
+                            viewport.classList.remove('dragging');
+                            viewport.scrollTop = getValue() * ITEM_H;
+                            document.removeEventListener('mousemove', onMove);
+                            document.removeEventListener('mouseup', onUp);
+                            // defer clearing dragging so the click event fired after mouseup doesn't close the modal
+                            requestAnimationFrame(() => { dragging = false; });
+                        }
+                        document.addEventListener('mousemove', onMove);
+                        document.addEventListener('mouseup', onUp);
+                    });
+
+                    return { wrapper, getValue, setValue };
+                }
+
+                const hoursDrum = makeDrum(24);
+                const minutesDrum = makeDrum(60);
+
+                const modal = document.createElement('div');
+                modal.className = 'modal sleep-timer-modal';
+
+                const modalContent = document.createElement('div');
+                modalContent.className = 'modal-content';
+
+                const drumsRow = document.createElement('div');
+                drumsRow.className = 'sleep-timer-drums';
+
+                const hLabel = document.createElement('span');
+                hLabel.className = 'drum-roll-unit';
+                hLabel.textContent = 'h';
+
+                const mLabel = document.createElement('span');
+                mLabel.className = 'drum-roll-unit';
+                mLabel.textContent = 'm';
+
+                drumsRow.append(hoursDrum.wrapper, hLabel, minutesDrum.wrapper, mLabel);
+
+                const actions = document.createElement('div');
+                actions.className = 'sleep-timer-modal-actions';
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'secondary-btn';
+                cancelBtn.textContent = 'Cancel';
+
+                const okBtn = document.createElement('button');
+                okBtn.className = 'primary-btn';
+                okBtn.textContent = 'OK';
+
+                const modalTitle = document.createElement('p');
+                modalTitle.className = 'sleep-timer-modal-title';
+                modalTitle.textContent = 'Sleep Timer';
+
+                actions.append(cancelBtn, okBtn);
+                modalContent.append(modalTitle, drumsRow, actions);
+                modal.appendChild(modalContent);
+                document.body.appendChild(modal);
+
+                let dragging = false;
+
+                function openModal() {
+                    modal.style.display = 'flex';
+                    hoursDrum.setValue(parseInt(hoursInput.value, 10) || 0);
+                    minutesDrum.setValue(parseInt(minutesInput.value, 10) || 0);
+                }
+                function closeModal() {
+                    modal.style.display = 'none';
+                }
+
+                setBtn.addEventListener('click', (e) => { e.preventDefault(); openModal(); });
+                cancelBtn.addEventListener('click', closeModal);
+                modal.addEventListener('click', (e) => {
+                    if (!dragging && e.target === modal) closeModal();
+                });
+
+                okBtn.addEventListener('click', () => {
+                    const h = hoursDrum.getValue();
+                    const m = minutesDrum.getValue();
+                    hoursInput.value = h;
+                    minutesInput.value = m;
+                    hoursInput.dispatchEvent(new Event('input'));
+                    if (h === 0 && m === 0) {
+                        enabledInput.checked = false;
+                        enabledInput.dispatchEvent(new Event('change'));
+                    }
+                    closeModal();
+                });
+
+                dom.dynamicInputs[feature.id] = { enabled: enabledInput, hours: hoursInput, minutes: minutesInput };
+            }
+
             if (feature.type === 'eq-mappings') {
                 const grid = document.createElement('div');
                 grid.className = 'setting-mapping-grid';
@@ -471,6 +679,10 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
                     if (!subInput) return;
                     if (subInput instanceof HTMLInputElement && subInput.type === 'checkbox') {
                         subInput.checked = !!subValue;
+                        subInput.dispatchEvent(new Event('change'));
+                    } else if (subInput instanceof HTMLInputElement && subInput.type === 'number') {
+                        subInput.value = String(subValue ?? 0);
+                        subInput.dispatchEvent(new Event('input'));
                     } else if (subInput instanceof HTMLSelectElement) {
                         subInput.value = String(subValue);
                     }

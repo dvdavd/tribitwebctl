@@ -26,6 +26,11 @@ export const xsoundPlus2Profile = createProfile({
                 ]
             },
             {
+                type: 'sleep-timer',
+                id: 'sleepTimer',
+                label: 'Sleep Timer'
+            },
+            {
                 type: 'divider',
                 style: 'alternate',
                 label: 'EQ Button Mappings'
@@ -101,12 +106,19 @@ export const xsoundPlus2Profile = createProfile({
         const buttonIndex = parseInt(targetKey.replace('btn', ''), 10);
         return this.buildCommand(0x18, [3, buttonIndex, eqState.id, ...eqState.bands.map((band) => band + 8)]);
     },
-    createSettingsCommands(settings) {
+    createSettingsCommands(settings, { skipSleepTimer = false } = {}) {
         const promptsFeature = this.capabilities.features.find((f) => f.id === 'prompts');
-        return [
-            this.buildCommand(0x8C, [settings.shutdownMode.enabled ? 1 : 0]),
+        const commands = [];
+        if (!skipSleepTimer) {
+            const timer = settings.sleepTimer ?? { enabled: false, hours: 0, minutes: 0 };
+            const timerOn = timer.enabled && (timer.hours > 0 || timer.minutes > 0);
+            commands.push(this.buildCommand(0x0B, timerOn ? [timer.hours & 0xFF, timer.minutes & 0xFF] : [0xFF, 0xFF]));
+        }
+        commands.push(
+            this.buildCommand(0x8C, [settings.shutdownMode?.enabled ? 1 : 0]),
             this.buildCommand(0x90, promptsFeature.items.map((p) => settings.prompts[p.key] ? 1 : 0))
-        ];
+        );
+        return commands;
     },
     decodeNotification(value) {
         const packet = parseNotificationPacket(value);
@@ -149,7 +161,15 @@ export const xsoundPlus2Profile = createProfile({
                 return null;
             case 0x11:
                 if (packet.payload.length >= 3) {
-                    return { shutdownMode: { enabled: packet.payload[2] !== 0 } };
+                    const sleepOff = packet.payload[0] === 0xFF && packet.payload[1] === 0xFF;
+                    return {
+                        sleepTimer: {
+                            enabled: !sleepOff,
+                            hours:   sleepOff ? 0 : packet.payload[0],
+                            minutes: sleepOff ? 0 : packet.payload[1]
+                        },
+                        shutdownMode: { enabled: packet.payload[2] !== 0 }
+                    };
                 }
                 return null;
             case 0x91:

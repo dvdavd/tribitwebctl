@@ -29,23 +29,6 @@ Quick options:
 - Install as a PWA for an app-like experience
 - Build a single-file `standalone.html` version with inlined assets
 
-## Project Structure
-
-```text
-.
-├── index.html                 # Main app shell
-├── styles/main.css            # App styling
-├── js/main.js                 # App bootstrap and event wiring
-├── js/bluetooth.js            # Web Bluetooth connection helpers
-├── js/protocol.js             # Packet encoding/decoding
-├── js/presets.js              # localStorage-backed custom presets
-├── js/speakers/               # Speaker-specific profiles and capabilities
-├── manifest.webmanifest       # PWA manifest
-├── sw.js                      # Service worker for app shell caching
-├── build.js                   # Standalone HTML build script
-└── standalone.html            # Generated self-contained build output
-```
-
 ## Requirements
 
 - A browser with **Web Bluetooth** support
@@ -59,17 +42,6 @@ Notes:
 
 - On some Linux setups, Web Bluetooth may require enabling `chrome://flags/#enable-experimental-web-platform-features`.
 - The speaker should not already be connected to the official app while this app is trying to connect.
-
-## Distribution
-
-This project is distributed in two forms:
-
-- **GitHub Pages app (recommended):** `https://dvdavd.github.io/tribitwebctl/`
-- **Single-file standalone build:** `standalone.html`
-
-The GitHub Pages version is the primary distribution channel because it provides HTTPS, which is the most reliable way to use Web Bluetooth and the installable PWA features.
-
-The standalone file is provided as a convenience option for people who want to keep a single local file and open it directly in a compatible browser.
 
 ## Running Locally
 
@@ -89,16 +61,6 @@ http://localhost:8000
 
 Because `localhost` is treated as a secure context, Web Bluetooth can be used there without HTTPS certificates.
 
-## Development
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-There is currently no dedicated dev server or test script in `package.json`; development is done by editing the static files and serving the project locally.
-
 ## Standalone Build
 
 The build step creates a self-contained `standalone.html` file by:
@@ -111,6 +73,7 @@ The build step creates a self-contained `standalone.html` file by:
 Build it with:
 
 ```bash
+npm install
 npm run build
 ```
 
@@ -123,40 +86,6 @@ standalone.html
 Unlike the main app, the standalone build does not need a web server. You can open `standalone.html` directly from local disk in a compatible browser and use it as a single-file version of the app.
 
 GitHub Actions also builds `standalone.html` automatically on pushes to `main` and on manual runs. The generated file is uploaded as a workflow artifact.
-
-## Diagnostic Mode
-
-Diagnostic Mode is a built-in tool for capturing raw BLE data from unsupported speakers. It is useful when adding support for a new device.
-
-### Accessing diagnostic mode
-
-Use the **Diagnostic Mode** link in the app footer on the connect screen.
-
-### How it works
-
-1. Click **Connect & Dump** - a Bluetooth device picker opens filtering for devices with names starting `LE_` or `Tribit`.
-2. Once connected, the app subscribes to the speaker's standard GATT notification characteristic and performs the initial handshake.
-3. A 15-second capture window opens. Press buttons on the speaker (volume, EQ, power, etc.) during this time to record the notifications each action produces.
-4. While connected you can also send arbitrary raw hex commands to the speaker using the **Send** input field (e.g. `02 01`). Responses are logged in real time.
-5. After 15 seconds the app downloads a `tribit-diagnostic-<device>-<timestamp>.json` file containing the device name, full GATT service/characteristic inventory, and every notification received during the session.
-
-### Using the dump
-
-Share the downloaded JSON when opening an issue or pull request to add a new speaker profile. The dump gives enough information to identify the service and characteristic UUIDs, decode command/response packet structure, and wire up a new profile in `js/speakers/`.
-
-## Supported Speaker Profiles
-
-Currently implemented:
-
-- `LE_Tribit XSound Plus 2`
-
-Speaker-specific behavior lives in `js/speakers/`. Adding support for more devices should mainly involve introducing another profile that defines:
-
-- Bluetooth filters and GATT UUIDs
-- supported EQ/settings capabilities
-- command builders
-- notification decoding
-- friendly connection error handling
 
 ## Storage
 

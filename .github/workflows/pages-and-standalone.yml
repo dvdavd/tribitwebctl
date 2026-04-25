@@ -4,6 +4,18 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'js/**'
+      - 'styles/**'
+      - 'assets/**'
+      - 'index.html'
+      - 'standalone.html'
+      - 'sw.js'
+      - 'build.js'
+      - 'manifest.webmanifest'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 env:

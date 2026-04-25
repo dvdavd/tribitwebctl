@@ -18,14 +18,15 @@ Quick options:
 ## Features
 
 - Connect to a supported speaker with Web Bluetooth
-- View battery percentage
 - Adjust speaker volume
 - Change the active EQ preset or edit a custom 9-band EQ curve
-- Apply EQ changes live to the speaker
-- Save custom EQ presets locally in the browser
-- Configure auto-off timing
-- Enable or disable voice and beep prompts
 - Assign EQ presets to the hardware EQ button modes
+- Save custom EQ presets locally in the browser
+- Enable or disable a sleep timer (up to 23 hours, 59 minutes)
+- Enable or disable auto shutdown
+- Enable or disable voice and beep prompts
+- View battery percentage
+- View firmware version
 - Install as a PWA for an app-like experience
 - Build a single-file `standalone.html` version with inlined assets
 
@@ -104,7 +105,7 @@ Bluetooth control still depends on browser support and access to the local Bluet
 
 - Web Bluetooth support varies by platform and browser
 - Only the currently implemented speaker profile is supported
-- There is no automated test suite yet
+- Playback controls, power-off and factory reset are not supported over BLE
 - The standalone build is intended for convenience, but Bluetooth behavior can still differ by browser and platform
 - Opening `standalone.html` from `file://` may behave differently from the hosted HTTPS version depending on browser security rules
 

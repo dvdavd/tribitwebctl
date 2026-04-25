@@ -49,7 +49,12 @@ Examples:
 | cmd | payload | meaning |
 |-----|---------|---------|
 | `0x88` | `[step]` | SET volume; step = 0–31 |
-| `0x8C` | `[mode]` | SET auto-shutdown; 0=off 1=on |
+| `0x01` | — | Power off (immediate shutdown) |
+| `0x7C` | — | Factory reset |
+| `0x87` | `[0]` | Play/pause toggle |
+| `0x87` | `[1]` | Previous track |
+| `0x87` | `[2]` | Next track |
+| `0x8C` | `[mode]` | SET auto-shutdown; `0`=off `1`=on |
 | `0x0B` | `[hours, minutes]` | SET sleep timer; `[0xFF, 0xFF]` = off |
 | `0x90` | `[p,b,l,m,t]` | SET voice prompts; 5 booleans |
 | `0x82` | `[preset_id, b0..b8]` | SET active EQ; `0xFE` means custom |
@@ -74,6 +79,21 @@ Examples:
 | `0x11` | `[sleep_h, sleep_m, shutdown]` | sleep timer (bytes 0–1) and auto-shutdown mode (byte 2); `sleep_h=0xFF, sleep_m=0xFF` means off |
 | `0x05` | `[preset_id, b0..b8]` | active EQ |
 | `0x19` | `[3, btn, type, b0..b8]` | EQ button config; one packet per button |
+
+## RFCOMM Transport
+
+Playback controls (`0x87`), power-off (`0x01`) and factory reset (`0x7C`) are sent over classic Bluetooth RFCOMM channel 3, not BLE.
+
+### Preamble requirement
+
+Before a transport command is processed, the speaker requires a specific preamble sequence:
+
+1. Send `GET battery` (`cmd=0x02`, no payload)
+2. Send `GET firmware` (`cmd=0x06`, no payload)
+3. **Read back the response**: the speaker will not act on the following command until its response to the preamble has been consumed from the socket
+4. Send the actual command
+
+Skipping the preamble, or sending it without reading the response, results in the command being silently ignored. The exact reason for this requirement is unknown; it may be a handshake that identifies the client as a legitimate host.
 
 ## EQ Details
 

@@ -49,15 +49,16 @@ Examples:
 | cmd | payload | meaning |
 |-----|---------|---------|
 | `0x88` | `[step]` | SET volume; step = 0–31 |
-| `0x87` | `[0/1]` | SET play state |
 | `0x8C` | `[mode]` | SET auto-shutdown; 0=off 1=on |
 | `0x0B` | `[hours, minutes]` | SET sleep timer; `[0xFF, 0xFF]` = off |
 | `0x90` | `[p,b,l,m,t]` | SET voice prompts; 5 booleans |
 | `0x82` | `[preset_id, b0..b8]` | SET active EQ; `0xFE` means custom |
 | `0x18` | `[3, btn, type, b0..b8]` | SET EQ button memory; `btn=0/1/2`, `type=0xFE` for custom |
 | `0x09` | — | GET volume |
+| `0x08` | — | GET play state |
+| `0x06` | — | GET firmware version |
 | `0x91` | — | GET voice prompts |
-| `0x11` | — | GET auto-shutdown state |
+| `0x11` | — | GET auto-shutdown / sleep timer state |
 | `0x05` | — | GET active EQ |
 | `0x19` | — | GET EQ button config |
 
@@ -67,7 +68,8 @@ Examples:
 |-----|---------|---------|
 | `0x09` | `[step]` | volume; step = 0–31 |
 | `0x02` | `[pct]` | battery percent |
-| `0x08` | `[0/1]` | play state |
+| `0x06` | `[day, month, year, major, minor, patch]` | firmware version and build date; e.g. `[24, 11, 22, 0, 3, 1]` = v0.3.1 built 2024-11-22 |
+| `0x08` | `[0/1]` | play state; `1`=playing `0`=paused; sent unsolicited on change |
 | `0x91` | `[p,b,l,m,t]` | voice prompts state |
 | `0x11` | `[sleep_h, sleep_m, shutdown]` | sleep timer (bytes 0–1) and auto-shutdown mode (byte 2); `sleep_h=0xFF, sleep_m=0xFF` means off |
 | `0x05` | `[preset_id, b0..b8]` | active EQ |

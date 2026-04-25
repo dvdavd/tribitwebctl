@@ -94,7 +94,7 @@ export const xsoundPlus2Profile = createProfile({
         return buildPacket(DEVICE_TYPE, command, payload);
     },
     getInitialSyncCommands() {
-        return [0x02, 0x09, 0x11, 0x91, 0x05, 0x19];
+        return [0x02, 0x09, 0x11, 0x91, 0x05, 0x19, 0x06];
     },
     createVolumeCommand(volumePercent) {
         return this.buildCommand(0x88, [Math.round(volumePercent * 31 / 100)]);
@@ -183,6 +183,12 @@ export const xsoundPlus2Profile = createProfile({
                             t: !!packet.payload[4]
                         }
                     };
+                }
+                return null;
+            case 0x06:
+                if (packet.payload.length >= 6) {
+                    const [, , , major, minor, patch] = packet.payload;
+                    return { firmwareVersion: `v${major}.${minor}.${patch}` };
                 }
                 return null;
             default:

@@ -78,6 +78,10 @@ function applyDecodedUpdate(update) {
         ui.updateBatteryStatus(update.batteryPercentage);
     }
 
+    if (update.firmwareVersion) {
+        ui.updateFirmwareVersion(update.firmwareVersion);
+    }
+
     if (Number.isFinite(update.volumePercent)) {
         ui.updateVolumeSlider(update.volumePercent);
     }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tribit-web-control-v6';
+const CACHE_NAME = 'tribit-web-control-v7';
 const APP_SHELL = [
     './',
     './index.html',

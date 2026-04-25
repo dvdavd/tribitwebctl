@@ -48,6 +48,8 @@ export function createDom() {
         diagnosticHexInput: byId('diagnosticHexInput'),
         diagnosticSendBtn: byId('diagnosticSendBtn'),
         diagnosticConnectBtn: byId('diagnosticConnectBtn'),
-        diagnosticCloseBtn: byId('diagnosticCloseBtn')
+        diagnosticCloseBtn: byId('diagnosticCloseBtn'),
+        pageFooter: byId('pageFooter'),
+        firmwareVersion: byId('firmwareVersion')
     };
 }

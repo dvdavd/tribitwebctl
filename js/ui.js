@@ -511,6 +511,11 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
         dom.batteryIcon.alt = hasKnownLevel ? `Battery level ${percentage}%` : 'Battery level unknown';
     }
 
+    function updateFirmwareVersion(version) {
+        dom.firmwareVersion.textContent = `Firmware ${version}`;
+        dom.pageFooter.style.display = '';
+    }
+
     function updateVolumeSlider(value) {
         dom.volLabel.textContent = value;
         dom.volume.value = value;
@@ -830,6 +835,7 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
         syncActiveTargetSelection,
         updateBatteryStatus,
         updateCustomPresetControls,
+        updateFirmwareVersion,
         updateVolumeSlider
     };
 }

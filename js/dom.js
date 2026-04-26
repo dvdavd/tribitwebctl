@@ -4,6 +4,7 @@ function byId(id) {
 
 export function createDom() {
     const eqSliders = Array.from(document.querySelectorAll('.eq-slider'));
+    const eqSliderInputs = Array.from(document.querySelectorAll('.eq-slider-input'));
     const eqSliderWrappers = Array.from(document.querySelectorAll('.eq-slider-wrapper'));
 
     return {
@@ -17,6 +18,8 @@ export function createDom() {
         batteryHeader: byId('batteryHeader'),
         connectBtn: byId('connectBtn'),
         connectBtnLabel: byId('connectBtnLabel'),
+        mockConnectBtn: byId('mockConnectBtn'),
+        mockProfileSelect: byId('mockProfileSelect'),
         errorPanel: byId('errorPanel'),
         errorTitle: byId('errorTitle'),
         errorBody: byId('errorBody'),
@@ -35,9 +38,12 @@ export function createDom() {
         eqCurveGlow: byId('eqCurveGlow'),
         eqCurvePath: byId('eqCurvePath'),
         eqSliders,
+        eqSliderInputs,
         eqSliderWrappers,
         activateEqBtn: byId('activateEqBtn'),
         flattenEqBtn: byId('flattenEqBtn'),
+        mockView: byId('mockView'),
+        mockCloseBtn: byId('mockCloseBtn'),
         browserModal: byId('browserModal'),
         browserModalClose: byId('browserModalClose'),
         diagnosticView: byId('diagnosticView'),

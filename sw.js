@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tribit-web-control-v7';
+const CACHE_NAME = 'tribit-web-control-v9';
 const APP_SHELL = [
     './',
     './index.html',
@@ -14,6 +14,7 @@ const APP_SHELL = [
     './js/speakers/base.js',
     './js/speakers/index.js',
     './js/speakers/xsound-plus-2.js',
+    './js/speakers/stormbox-mini-plus.js',
     './assets/favicon.svg',
     './assets/material-symbols--battery-android-frame-question-sharp.svg',
     './assets/material-symbols--battery-android-frame-1-sharp.svg',

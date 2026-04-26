@@ -1,6 +1,6 @@
 # Tribit Web Control
 
-Tribit Web Control is a browser-based control app for supported Tribit speakers. It lets you connect over Web Bluetooth and adjust volume, EQ, auto-off settings, prompts, battery status, and EQ button mappings without relying on a native mobile app.
+Tribit Web Control is a browser-based control app for the **Tribit XSound Plus 2**, and potentially other supported bluetooth speakers that use BLE. It lets you connect over Web Bluetooth and adjust volume, EQ, auto-off settings, prompts, battery status, and EQ button mappings without relying on a native mobile app.
 
 The project currently includes a speaker profile for the **Tribit XSound Plus 2**.
 

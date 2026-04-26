@@ -18,6 +18,21 @@ function setSliderFill(slider, value) {
     slider.style.setProperty('--slider-fill', `${fill}%`);
 }
 
+function setCustomSliderFill(slider, value) {
+    const min = parseInt(slider.getAttribute('aria-valuemin') ?? '-8', 10);
+    const max = parseInt(slider.getAttribute('aria-valuemax') ?? '8', 10);
+    const fill = ((value - min) / (max - min)) * 100;
+    const thumbSize = 20;
+    const sliderHeight = slider.getBoundingClientRect().height || 140;
+    const usableHeight = Math.max(sliderHeight - thumbSize, 0);
+    const thumbTop = (1 - (fill / 100)) * usableHeight;
+    slider.style.setProperty('--slider-fill', `${fill}%`);
+    slider.style.setProperty('--slider-fill-height', `${(fill / 100) * usableHeight}px`);
+    slider.style.setProperty('--slider-thumb-top', `${thumbTop}px`);
+    slider.setAttribute('aria-valuenow', String(value));
+    slider.setAttribute('aria-valuetext', formatEqValue(value));
+}
+
 function formatEqValue(value) {
     return `${value >= 0 ? '+' : ''}${value}`;
 }
@@ -48,6 +63,9 @@ function buildSmoothPath(points) {
 }
 
 export function createUi({ appTitle, dom, getProfile, state, presets }) {
+    let eqCurveFrame = null;
+    let eqSliderLayoutFrame = null;
+
     function bandsMatch(left = [], right = []) {
         return left.length === right.length && left.every((value, index) => value === right[index]);
     }
@@ -106,15 +124,17 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
         const thumbSize = 20;
 
         const points = dom.eqSliderWrappers.map((wrapper, index) => {
+            const wrapperRect = wrapper.getBoundingClientRect();
             const sliderRect = dom.eqSliders[index].getBoundingClientRect();
-            const value = parseInt(dom.eqSliders[index].value, 10);
-            const min = parseInt(dom.eqSliders[index].min, 10);
-            const max = parseInt(dom.eqSliders[index].max, 10);
+            const input = dom.eqSliderInputs[index];
+            const value = parseInt(input.value, 10);
+            const min = parseInt(input.min, 10);
+            const max = parseInt(input.max, 10);
             const normalized = (value - min) / (max - min);
             const usableHeight = Math.max(sliderRect.height - thumbSize, 1);
 
             return {
-                x: sliderRect.left - containerRect.left + (sliderRect.width / 2),
+                x: wrapperRect.left - containerRect.left + (wrapperRect.width / 2),
                 y: (sliderRect.top - containerRect.top) + (thumbSize / 2) + ((1 - normalized) * usableHeight)
             };
         });
@@ -135,13 +155,48 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
         dom.eqCurveGlow.setAttribute('d', path);
     }
 
+    function updateEqSliderLayout() {
+        dom.eqSliders.forEach((slider, index) => {
+            if (slider.classList.contains('no-data')) return;
+            const input = dom.eqSliderInputs[index];
+            if (!input) return;
+            setCustomSliderFill(slider, parseInt(input.value, 10));
+        });
+    }
+
+    function scheduleEqCurveUpdate() {
+        if (eqCurveFrame !== null) {
+            cancelAnimationFrame(eqCurveFrame);
+        }
+
+        eqCurveFrame = requestAnimationFrame(() => {
+            eqCurveFrame = null;
+            updateEqCurve();
+        });
+    }
+
+    function scheduleEqSliderLayoutUpdate() {
+        if (eqSliderLayoutFrame !== null) {
+            cancelAnimationFrame(eqSliderLayoutFrame);
+        }
+
+        eqSliderLayoutFrame = requestAnimationFrame(() => {
+            eqSliderLayoutFrame = null;
+            updateEqSliderLayout();
+        });
+    }
+
     function bindEqCurveResize() {
         if (typeof ResizeObserver !== 'undefined') {
-            const observer = new ResizeObserver(() => updateEqCurve());
+            const observer = new ResizeObserver(() => {
+                scheduleEqSliderLayoutUpdate();
+                scheduleEqCurveUpdate();
+            });
             observer.observe(dom.eqContainer);
             dom.eqSliderWrappers.forEach((wrapper) => observer.observe(wrapper));
         } else {
-            window.addEventListener('resize', updateEqCurve);
+            window.addEventListener('resize', scheduleEqSliderLayoutUpdate);
+            window.addEventListener('resize', scheduleEqCurveUpdate);
         }
     }
 
@@ -292,7 +347,8 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
                 currentSection.appendChild(container);
 
                 // Drum-roll picker modal
-                function makeDrum(count) {
+                let onDrumEnter = null;
+                function makeDrum(count, label) {
                     const ITEM_H = 44;
                     const VISIBLE = 5;
 
@@ -302,12 +358,18 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
                     const viewport = document.createElement('div');
                     viewport.className = 'drum-roll-viewport';
                     viewport.style.height = `${ITEM_H * VISIBLE}px`;
+                    viewport.setAttribute('tabindex', '0');
+                    viewport.setAttribute('role', 'spinbutton');
+                    viewport.setAttribute('aria-label', label);
+                    viewport.setAttribute('aria-valuemin', '0');
+                    viewport.setAttribute('aria-valuemax', String(count - 1));
 
                     const padTop = document.createElement('div');
                     padTop.className = 'drum-roll-pad';
                     padTop.style.height = `${ITEM_H * Math.floor(VISIBLE / 2)}px`;
                     viewport.appendChild(padTop);
 
+                    const items = [];
                     for (let i = 0; i < count; i++) {
                         const item = document.createElement('div');
                         item.className = 'drum-roll-item';
@@ -316,6 +378,7 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
                             viewport.scrollTo({ top: i * ITEM_H, behavior: 'smooth' });
                         });
                         viewport.appendChild(item);
+                        items.push(item);
                     }
 
                     const padBot = document.createElement('div');
@@ -332,9 +395,46 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
                     function getValue() {
                         return Math.round(viewport.scrollTop / ITEM_H);
                     }
-                    function setValue(v) {
-                        viewport.scrollTo({ top: v * ITEM_H, behavior: 'instant' });
+                    function updateActive() {
+                        const v = getValue();
+                        items.forEach((el, i) => el.classList.toggle('active', i === v));
+                        viewport.setAttribute('aria-valuenow', String(v));
                     }
+                    function setValue(v, smooth) {
+                        const clamped = Math.max(0, Math.min(count - 1, v));
+                        viewport.scrollTo({ top: clamped * ITEM_H, behavior: smooth ? 'smooth' : 'instant' });
+                        if (!smooth) updateActive();
+                    }
+
+                    viewport.addEventListener('scroll', updateActive);
+
+                    let digitBuf = '';
+                    let digitTimer = null;
+                    function commitDigits(str) {
+                        clearTimeout(digitTimer);
+                        digitTimer = null;
+                        setValue(Math.min(parseInt(str, 10), count - 1), false);
+                        digitBuf = '';
+                    }
+
+                    viewport.addEventListener('keydown', (e) => {
+                        if (e.key >= '0' && e.key <= '9') {
+                            e.preventDefault();
+                            digitBuf += e.key;
+                            setValue(Math.min(parseInt(digitBuf, 10), count - 1), false);
+                            clearTimeout(digitTimer);
+                            if (digitBuf.length >= 2) { commitDigits(digitBuf); }
+                            else { digitTimer = setTimeout(() => commitDigits(digitBuf), 1200); }
+                            return;
+                        }
+                        digitBuf = '';
+                        clearTimeout(digitTimer);
+                        if (e.key === 'Enter') { e.preventDefault(); if (onDrumEnter) onDrumEnter(); }
+                        else if (e.key === 'ArrowUp') { e.preventDefault(); setValue(getValue() - 1, false); }
+                        else if (e.key === 'ArrowDown') { e.preventDefault(); setValue(getValue() + 1, false); }
+                        else if (e.key === 'Home') { e.preventDefault(); setValue(0, false); }
+                        else if (e.key === 'End') { e.preventDefault(); setValue(count - 1, false); }
+                    });
 
                     viewport.addEventListener('scrollend', () => {
                         if (viewport.classList.contains('dragging')) return;
@@ -366,8 +466,8 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
                     return { wrapper, getValue, setValue };
                 }
 
-                const hoursDrum = makeDrum(24);
-                const minutesDrum = makeDrum(60);
+                const hoursDrum = makeDrum(24, 'Hours');
+                const minutesDrum = makeDrum(60, 'Minutes');
 
                 const modal = document.createElement('div');
                 modal.className = 'modal sleep-timer-modal';
@@ -398,6 +498,7 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
                 const okBtn = document.createElement('button');
                 okBtn.className = 'primary-btn';
                 okBtn.textContent = 'OK';
+                onDrumEnter = () => okBtn.click();
 
                 const modalTitle = document.createElement('p');
                 modalTitle.className = 'sleep-timer-modal-title';
@@ -410,14 +511,39 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
 
                 let dragging = false;
 
+                const focusableInModal = () => [
+                    hoursDrum.wrapper.querySelector('[tabindex="0"]'),
+                    minutesDrum.wrapper.querySelector('[tabindex="0"]'),
+                    cancelBtn,
+                    okBtn,
+                ];
+
                 function openModal() {
                     modal.style.display = 'flex';
                     hoursDrum.setValue(parseInt(hoursInput.value, 10) || 0);
                     minutesDrum.setValue(parseInt(minutesInput.value, 10) || 0);
+                    requestAnimationFrame(() => requestAnimationFrame(() => {
+                        modal.classList.add('modal-open');
+                        focusableInModal()[0].focus();
+                    }));
                 }
                 function closeModal() {
+                    modal.classList.remove('modal-open');
                     modal.style.display = 'none';
+                    setBtn.focus();
                 }
+
+                modal.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') { closeModal(); return; }
+                    if (e.key !== 'Tab') return;
+                    const els = focusableInModal();
+                    const first = els[0], last = els[els.length - 1];
+                    if (e.shiftKey) {
+                        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+                    } else {
+                        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+                    }
+                });
 
                 setBtn.addEventListener('click', (e) => { e.preventDefault(); openModal(); });
                 cancelBtn.addEventListener('click', closeModal);
@@ -543,21 +669,39 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
         dom.errorPanel.classList.remove('active');
     }
 
+    function openModal(el) {
+        el.style.display = 'flex';
+        requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('modal-open')));
+    }
+
+    function closeModal(el) {
+        el.classList.remove('modal-open');
+        el.style.display = 'none';
+    }
+
     function showBrowserModal() {
-        dom.browserModal.style.display = 'flex';
+        openModal(dom.browserModal);
     }
 
     function hideBrowserModal() {
-        dom.browserModal.style.display = 'none';
+        closeModal(dom.browserModal);
+    }
+
+    function showMockView() {
+        openModal(dom.mockView);
+    }
+
+    function hideMockView() {
+        closeModal(dom.mockView);
     }
 
     function showDiagnosticView() {
-        dom.diagnosticView.style.display = 'flex';
+        openModal(dom.diagnosticView);
         dom.diagnosticStatus.textContent = 'Ready to connect...';
     }
 
     function hideDiagnosticView() {
-        dom.diagnosticView.style.display = 'none';
+        closeModal(dom.diagnosticView);
     }
 
     function updateDiagnosticStatus(message, append = false) {
@@ -630,7 +774,7 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
         }
     }
 
-    function renderEqSliders(selectedEqState) {
+    function renderEqSliders(selectedEqState, { syncSliderValues = true } = {}) {
         const isCustom = selectedEqState.id === profile().capabilities.eq.customPresetId;
         const presetValue = dom.eqPreset.value;
         const presetDef = isCustom
@@ -644,17 +788,25 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
             : (overlayBands ?? new Array(profile().capabilities.eq.bandCount).fill(0));
 
         dom.eqSliders.forEach((slider, index) => {
+            const input = dom.eqSliderInputs[index];
             const value = displayBands[index] ?? 0;
-            slider.value = value;
-            slider.disabled = false;
+            if (syncSliderValues) {
+                input.value = value;
+            }
+            input.disabled = false;
+            slider.tabIndex = hasData ? 0 : -1;
+            slider.setAttribute('aria-disabled', hasData ? 'false' : 'true');
             const readout = document.getElementById(`bandValue${index}`);
             if (hasData) {
                 slider.classList.remove('no-data');
-                setSliderFill(slider, value);
+                setCustomSliderFill(slider, value);
                 if (readout) readout.textContent = formatEqValue(value);
             } else {
                 slider.classList.add('no-data');
                 slider.style.setProperty('--slider-fill', '0%');
+                slider.style.setProperty('--slider-fill-height', '0px');
+                slider.setAttribute('aria-valuenow', '0');
+                slider.setAttribute('aria-valuetext', 'No data');
                 if (readout) readout.textContent = '–';
             }
         });
@@ -662,7 +814,8 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
         setEqCurveColor(hasData ? (presetDef?.color ?? null) : null);
 
         if (hasData) {
-            updateEqCurve();
+            scheduleEqCurveUpdate();
+            scheduleEqSliderLayoutUpdate();
         } else {
             dom.eqCurvePath.setAttribute('d', '');
             dom.eqCurveGlow.setAttribute('d', '');
@@ -705,6 +858,12 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
             : (selectedValue ?? dom.eqPreset.value);
         renderEqPresetOptions(selection);
         renderEqSliders(selectedEqState);
+        updateCustomPresetControls();
+    }
+
+    function refreshEqEditor() {
+        const selectedEqState = getSelectedEqState(state, profile());
+        renderEqSliders(selectedEqState, { syncSliderValues: false });
         updateCustomPresetControls();
     }
 
@@ -805,8 +964,12 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
             element.disabled = disabled;
         });
         if (disabled) {
+            dom.eqSliderInputs.forEach((input) => {
+                input.disabled = true;
+            });
             dom.eqSliders.forEach((slider) => {
-                slider.disabled = true;
+                slider.tabIndex = -1;
+                slider.setAttribute('aria-disabled', 'true');
             });
             dom.eqContainer.style.opacity = '0.5';
             return;
@@ -819,6 +982,7 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
         hideErrorPanel,
         renderConnectedState,
         renderDisconnectedState,
+        refreshEqEditor,
         renderEqSection,
         renderInitial,
         renderSettings,
@@ -826,6 +990,8 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
         setControlsVisible,
         setEqInputsDisabled,
         showBrowserModal,
+        showMockView,
+        hideMockView,
         showDiagnosticView,
         hideDiagnosticView,
         updateDiagnosticStatus,

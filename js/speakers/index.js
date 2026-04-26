@@ -1,4 +1,5 @@
 import { xsoundPlus2Profile } from './xsound-plus-2.js';
+import { stormboxMiniPlusProfile } from './stormbox-mini-plus.js';
 export { createProfile } from './base.js';
 
 /**
@@ -34,7 +35,7 @@ export { createProfile } from './base.js';
  *   getBatteryIconKey(percentage): string
  */
 
-const profiles = [xsoundPlus2Profile];
+const profiles = [xsoundPlus2Profile, stormboxMiniPlusProfile];
 
 export function getDefaultSpeakerProfile() {
     return profiles[0];
@@ -45,13 +46,13 @@ export function getSpeakerProfiles() {
 }
 
 export function getBluetoothFilters() {
-    return profiles.flatMap((profile) => profile.bluetoothFilters || []);
+    return profiles.filter((p) => !p.disabled).flatMap((profile) => profile.bluetoothFilters || []);
 }
 
 export function getBluetoothOptionalServices() {
-    return Array.from(new Set(profiles.map((profile) => profile.uuids?.service).filter(Boolean)));
+    return Array.from(new Set(profiles.filter((p) => !p.disabled).map((profile) => profile.uuids?.service).filter(Boolean)));
 }
 
 export function matchSpeakerProfile(device) {
-    return profiles.find((profile) => profile.matchesDevice?.(device)) || null;
+    return profiles.find((profile) => !profile.disabled && profile.matchesDevice?.(device)) || null;
 }

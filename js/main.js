@@ -7,6 +7,7 @@ import {
     getBluetoothFilters,
     getBluetoothOptionalServices,
     getDefaultSpeakerProfile,
+    getSpeakerProfiles,
     matchSpeakerProfile
 } from './speakers/index.js';
 
@@ -194,6 +195,20 @@ async function connectToSpeaker() {
     }
 }
 
+function mockConnect() {
+    const selectedId = dom.mockProfileSelect.value;
+    const selectedProfile = getSpeakerProfiles().find((p) => p.id === selectedId) || profile;
+    if (selectedProfile !== profile) {
+        profile = selectedProfile;
+        resetEqSlotsForProfile(state, profile);
+        state.customEqPresets = presets.getAll();
+    }
+    ui.renderConnectedState(`${profile.getDeviceDisplayName({ name: `LE_${profile.id}` })} (preview)`);
+    ui.updateBatteryStatus(75);
+    ui.updateVolumeSlider(50);
+    requestAnimationFrame(() => ui.renderEqSection());
+}
+
 async function applySettings() {
     if (!state.connection.commandCharacteristic) return;
     
@@ -310,18 +325,50 @@ function flattenEq() {
     log('UI: Flattened active curve to 0dB');
 }
 
-function handleEqSliderTouch(event) {
-    event.preventDefault();
-    const slider = event.currentTarget;
+function updateEqSliderFromPosition(slider, clientY) {
+    if (slider.getAttribute('aria-disabled') === 'true') return;
+
+    const bandIndex = parseInt(slider.dataset.band, 10);
+    const input = dom.eqSliderInputs[bandIndex];
+    if (!input) return;
+
     const rect = slider.getBoundingClientRect();
-    const touch = event.touches[0] || event.changedTouches[0];
-    const relY = Math.max(0, Math.min(touch.clientY - rect.top, rect.height));
-    // Top of slider = max value, bottom = min value
-    const normalized = 1 - relY / rect.height;
-    const min = parseInt(slider.min, 10);
-    const max = parseInt(slider.max, 10);
-    slider.value = Math.round(min + normalized * (max - min));
-    slider.dispatchEvent(new Event('input', { bubbles: true }));
+    const relY = Math.max(0, Math.min(clientY - rect.top, rect.height));
+    const normalized = 1 - (relY / rect.height);
+    const min = parseInt(input.min, 10);
+    const max = parseInt(input.max, 10);
+    input.value = String(Math.round(min + normalized * (max - min)));
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function adjustEqSliderValue(slider, delta) {
+    if (slider.getAttribute('aria-disabled') === 'true') return;
+
+    const bandIndex = parseInt(slider.dataset.band, 10);
+    const input = dom.eqSliderInputs[bandIndex];
+    if (!input) return;
+
+    const min = parseInt(input.min, 10);
+    const max = parseInt(input.max, 10);
+    const nextValue = Math.max(min, Math.min(max, parseInt(input.value, 10) + delta));
+    if (nextValue === parseInt(input.value, 10)) return;
+    input.value = String(nextValue);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function setEqSliderValue(slider, nextValue) {
+    if (slider.getAttribute('aria-disabled') === 'true') return;
+
+    const bandIndex = parseInt(slider.dataset.band, 10);
+    const input = dom.eqSliderInputs[bandIndex];
+    if (!input) return;
+
+    const min = parseInt(input.min, 10);
+    const max = parseInt(input.max, 10);
+    const clampedValue = Math.max(min, Math.min(max, nextValue));
+    if (clampedValue === parseInt(input.value, 10)) return;
+    input.value = String(clampedValue);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 function handleEqSliderInput(event) {
@@ -348,7 +395,7 @@ function handleEqSliderInput(event) {
     }
 
     selectedEqState.bands[bandIndex] = parseInt(event.target.value, 10);
-    ui.renderEqSection();
+    ui.refreshEqEditor();
 }
 
 function handleEqPresetChange(event) {
@@ -572,13 +619,20 @@ async function sendRawDiagnosticHex() {
 
 function handleHashChange() {
     if (window.location.hash === '#dump' || window.location.hash === '#debug') {
+        ui.hideMockView();
         ui.showDiagnosticView();
         dom.diagnosticConnectBtn.focus();
-    } else {
-        const wasOpen = dom.diagnosticView.style.display === 'flex';
+    } else if (window.location.hash === '#mock') {
         ui.hideDiagnosticView();
         ui.setDiagnosticControlsVisible(false);
-        if (wasOpen) {
+        ui.showMockView();
+        dom.mockConnectBtn.focus();
+    } else {
+        const wasDiagOpen = dom.diagnosticView.style.display === 'flex';
+        ui.hideDiagnosticView();
+        ui.setDiagnosticControlsVisible(false);
+        ui.hideMockView();
+        if (wasDiagOpen) {
             const diagLink = document.querySelector('.diagnostic-link');
             if (diagLink && diagLink.offsetParent !== null) diagLink.focus();
         }
@@ -601,6 +655,13 @@ function trapFocus(container, event) {
 
 function bindEvents() {
     dom.connectBtn.addEventListener('click', connectToSpeaker);
+    dom.mockConnectBtn.addEventListener('click', () => {
+        mockConnect();
+        window.location.hash = '';
+    });
+    dom.mockCloseBtn.addEventListener('click', () => {
+        window.location.hash = '';
+    });
     dom.browserModalClose.addEventListener('click', () => {
         ui.hideBrowserModal();
         dom.connectBtn.focus();
@@ -628,10 +689,69 @@ function bindEvents() {
         );
     });
 
-    dom.eqSliders.forEach((slider) => {
+    dom.eqSliderInputs.forEach((slider) => {
         slider.addEventListener('input', handleEqSliderInput);
-        slider.addEventListener('touchstart', handleEqSliderTouch, { passive: false });
-        slider.addEventListener('touchmove', handleEqSliderTouch, { passive: false });
+    });
+
+    dom.eqSliders.forEach((slider) => {
+        slider.addEventListener('pointerdown', (event) => {
+            if (event.button !== 0 && event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
+            event.preventDefault();
+            slider.focus();
+            slider.setPointerCapture(event.pointerId);
+            updateEqSliderFromPosition(slider, event.clientY);
+        });
+
+        slider.addEventListener('pointermove', (event) => {
+            if (!slider.hasPointerCapture(event.pointerId)) return;
+            event.preventDefault();
+            updateEqSliderFromPosition(slider, event.clientY);
+        });
+
+        slider.addEventListener('pointerup', (event) => {
+            if (slider.hasPointerCapture(event.pointerId)) {
+                slider.releasePointerCapture(event.pointerId);
+            }
+        });
+
+        slider.addEventListener('pointercancel', (event) => {
+            if (slider.hasPointerCapture(event.pointerId)) {
+                slider.releasePointerCapture(event.pointerId);
+            }
+        });
+
+        slider.addEventListener('keydown', (event) => {
+            switch (event.key) {
+            case 'ArrowUp':
+            case 'ArrowRight':
+                event.preventDefault();
+                adjustEqSliderValue(slider, 1);
+                break;
+            case 'ArrowDown':
+            case 'ArrowLeft':
+                event.preventDefault();
+                adjustEqSliderValue(slider, -1);
+                break;
+            case 'PageUp':
+                event.preventDefault();
+                adjustEqSliderValue(slider, 2);
+                break;
+            case 'PageDown':
+                event.preventDefault();
+                adjustEqSliderValue(slider, -2);
+                break;
+            case 'Home':
+                event.preventDefault();
+                setEqSliderValue(slider, parseInt(dom.eqSliderInputs[parseInt(slider.dataset.band, 10)].min, 10));
+                break;
+            case 'End':
+                event.preventDefault();
+                setEqSliderValue(slider, parseInt(dom.eqSliderInputs[parseInt(slider.dataset.band, 10)].max, 10));
+                break;
+            default:
+                break;
+            }
+        });
     });
 
     dom.eqPreset.addEventListener('change', handleEqPresetChange);
@@ -647,7 +767,7 @@ function bindEvents() {
             if (dom.browserModal.style.display === 'flex') {
                 ui.hideBrowserModal();
                 dom.connectBtn.focus();
-            } else if (dom.diagnosticView.style.display === 'flex') {
+            } else if (dom.diagnosticView.style.display === 'flex' || dom.mockView.style.display === 'flex') {
                 window.location.hash = '';
             }
         }
@@ -656,6 +776,8 @@ function bindEvents() {
                 trapFocus(dom.browserModal, event);
             } else if (dom.diagnosticView.style.display === 'flex') {
                 trapFocus(dom.diagnosticView, event);
+            } else if (dom.mockView.style.display === 'flex') {
+                trapFocus(dom.mockView, event);
             }
         }
     });
@@ -669,6 +791,12 @@ function bindEvents() {
 }
 
 registerServiceWorker();
+getSpeakerProfiles().forEach((p) => {
+    const option = document.createElement('option');
+    option.value = p.id;
+    option.textContent = p.getDeviceDisplayName({ name: `LE_${p.id}` });
+    dom.mockProfileSelect.append(option);
+});
 ui.renderInitial();
 ui.setControlsVisible(false);
 bindEvents();

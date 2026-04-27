@@ -146,7 +146,7 @@ async function runInitialSync() {
     log('Syncing initial state...');
     for (const command of profile.getInitialSyncCommands()) {
         await bluetooth.write(state.connection.commandCharacteristic, profile.buildCommand(command));
-        await new Promise((resolve) => setTimeout(resolve, 250));
+        await new Promise((resolve) => setTimeout(resolve, 50));
     }
     ui.setEqInputsDisabled(false);
     ui.renderEqSection();
@@ -273,7 +273,7 @@ async function applySettings() {
         for (const [index, command] of commands.entries()) {
             await bluetooth.write(state.connection.commandCharacteristic, command);
             if (index < commands.length - 1) {
-                await new Promise((resolve) => setTimeout(resolve, 200));
+                await new Promise((resolve) => setTimeout(resolve, 0));
             }
         }
         log('TX: Settings applied', 'tx');
@@ -284,11 +284,16 @@ async function applySettings() {
 
 async function applyLiveEq() {
     if (!state.connection.commandCharacteristic) return;
-    await bluetooth.write(
-        state.connection.commandCharacteristic,
-        profile.createApplyEqCommand(getSelectedEqState(state, profile))
-    );
-    log('TX: Applied to Live Sound', 'tx');
+    dom.activateEqBtn.disabled = true;
+    try {
+        await bluetooth.write(
+            state.connection.commandCharacteristic,
+            profile.createApplyEqCommand(getSelectedEqState(state, profile))
+        );
+        log('TX: Applied to Live Sound', 'tx');
+    } finally {
+        dom.activateEqBtn.disabled = false;
+    }
 }
 
 function flattenEq() {

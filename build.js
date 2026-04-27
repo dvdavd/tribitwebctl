@@ -70,7 +70,7 @@ function build() {
 
     html = html.replace(
         /<script type="module" src="js\/main\.js"><\/script>/,
-        `<script>\n${bundledJsWithAssets}\n</script>`
+        () => `<script>\n${bundledJsWithAssets}\n</script>`
     );
 
     // 6. Convert Assets to Base64 (Images, Icons, etc.)

@@ -79,6 +79,10 @@ function applyDecodedUpdate(update) {
         ui.updateBatteryStatus(update.batteryPercentage);
     }
 
+    if (update.playbackStatus !== undefined) {
+        ui.updatePlaybackStatus(update.playbackStatus);
+    }
+
     if (update.firmwareVersion) {
         ui.updateFirmwareVersion(update.firmwareVersion);
     }
@@ -397,6 +401,7 @@ function handleEqSliderInput(event) {
         dom.eqPreset.value = String(profile.capabilities.eq.customPresetId);
     } else if (selectedSoftwarePreset) {
         editedPresetLabel = selectedSoftwarePreset.label;
+        dom.eqPreset.value = String(profile.capabilities.eq.customPresetId);
     }
 
     selectedEqState.bands[bandIndex] = parseInt(event.target.value, 10);

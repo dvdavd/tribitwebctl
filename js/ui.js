@@ -637,6 +637,10 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
         dom.batteryIcon.alt = hasKnownLevel ? `Battery level ${percentage}%` : 'Battery level unknown';
     }
 
+    function updatePlaybackStatus(status) {
+        dom.playIcon.classList.toggle('play-icon--visible', status === 'playing');
+    }
+
     function updateFirmwareVersion(version) {
         dom.firmwareVersion.textContent = `Firmware ${version}`;
         dom.pageFooter.style.display = '';
@@ -883,6 +887,7 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
         dom.connectCard.style.display = '';
         dom.page.style.display = 'none';
         setConnectLoading(false);
+        updatePlaybackStatus(null);
     }
 
     function refreshEqMappingOptions() {
@@ -1002,6 +1007,7 @@ export function createUi({ appTitle, dom, getProfile, state, presets }) {
         updateBatteryStatus,
         updateCustomPresetControls,
         updateFirmwareVersion,
+        updatePlaybackStatus,
         updateVolumeSlider
     };
 }

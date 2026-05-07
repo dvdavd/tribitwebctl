@@ -130,8 +130,31 @@ h1 {
     line-height: 1;
 }
 
+.play-icon {
+    width: 1.3rem;
+    height: 1.3rem;
+    flex-shrink: 0;
+    fill: white;
+    overflow: hidden;
+    max-width: 0;
+    opacity: 0;
+    margin-left: 0;
+    margin-right: -0.4rem;
+    transition: max-width 0.25s ease, opacity 0.2s ease, margin-left 0.25s ease, margin-right 0.25s ease;
+}
+
+.play-icon--visible {
+    max-width: 1.3rem;
+    opacity: 1;
+    margin-left: -0.3rem;
+    margin-right: 0;
+}
+
 .page-footer {
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
     padding: 0.5rem 0 0.25rem;
 }
 
@@ -139,6 +162,27 @@ h1 {
     font-size: 0.75rem;
     color: var(--muted);
     opacity: 0.6;
+}
+
+.footer-divider {
+    font-size: 0.75rem;
+    color: var(--muted);
+    opacity: 0.3;
+}
+
+.footer-github-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    opacity: 0.45;
+    width: auto;
+    height: auto;
+}
+
+.footer-github-link svg {
+    width: 16px;
+    height: 16px;
 }
 
 .battery-icon {

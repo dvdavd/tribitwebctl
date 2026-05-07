@@ -94,7 +94,7 @@ export const xsoundPlus2Profile = createProfile({
         return buildPacket(DEVICE_TYPE, command, payload);
     },
     getInitialSyncCommands() {
-        return [0x02, 0x09, 0x11, 0x91, 0x05, 0x19, 0x06];
+        return [0x02, 0x08, 0x09, 0x11, 0x91, 0x05, 0x19, 0x06];
     },
     createVolumeCommand(volumePercent) {
         return this.buildCommand(0x88, [Math.round(volumePercent * 31 / 100)]);
@@ -127,6 +127,8 @@ export const xsoundPlus2Profile = createProfile({
         switch (packet.command) {
             case 0x02:
                 return { batteryPercentage: packet.payload[0] };
+            case 0x08:
+                return { playbackStatus: packet.payload[0] ? 'playing' : 'stopped' };
             case 0x09:
                 return { volumePercent: Math.round(packet.payload[0] * 100 / 31) };
             case 0x05:

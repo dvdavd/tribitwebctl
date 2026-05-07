@@ -14,6 +14,7 @@ export function createDom() {
         headerTitle: byId('headerTitle'),
         headerMeta: byId('headerMeta'),
         controls: Array.from(document.querySelectorAll('.controls')),
+        playIcon: byId('playIcon'),
         batteryIcon: byId('batteryIcon'),
         batteryHeader: byId('batteryHeader'),
         connectBtn: byId('connectBtn'),

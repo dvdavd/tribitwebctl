@@ -1,7 +1,9 @@
 import { buildPacket, parseNotificationPacket } from '../protocol.js';
 import { createProfile } from './base.js';
 
+// Confirmed from APK: Bts13Util.type = 1
 const DEVICE_TYPE = 0x01;
+// Confirmed from APK: EqUtil.preEqIndex → wire ID 3 for Custom slot
 const CUSTOM_PRESET_ID = 3;
 
 // Wire IDs confirmed from EqUtil.preEqIndex (old firmware, isNewVersion33=false, fw ≤ v1.02.00).
@@ -24,6 +26,7 @@ export const stormboxMiniPlusProfile = createProfile({
     disabled: true,
     // TODO: confirm LE advertised name (assumed LE_ prefix matches classic BT name)
     bluetoothFilters: [{ namePrefix: 'LE_Tribit StormBox Mini+' }],
+    // Confirmed from APK: BtClient.bleReadData33 / BleManager.writeData
     uuids: {
         service: '00002000-0000-1000-8000-00805f9b34fb',
         command: '00002003-0000-1000-8000-00805f9b34fb',
